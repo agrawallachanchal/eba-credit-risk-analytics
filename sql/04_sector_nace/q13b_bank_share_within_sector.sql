@@ -21,4 +21,4 @@ select bybankbysector.item, bybankbysector.lei_code, bybankbysector.nace_codes, 
 from bybankbysector
 inner join bysector
     on bysector.item = bybankbysector.item and bysector.nace_codes = bybankbysector.nace_codes
-order by item, nace_codes;
+order by bybankbysector.item, bybankbysector.nace_codes;

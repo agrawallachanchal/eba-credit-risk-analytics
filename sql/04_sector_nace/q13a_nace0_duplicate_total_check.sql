@@ -20,4 +20,4 @@ bybanknace as (
 select bybank.item, bybank.lei_code, totalnace0, totalallnace
 from bybank
 inner join bybanknace on bybank.item = bybanknace.item and bybank.lei_code = bybanknace.lei_code
-order by item;
+order by bybank.item;

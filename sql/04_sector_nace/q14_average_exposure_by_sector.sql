@@ -26,4 +26,4 @@ from bysector
 inner join bybankbysector
     on bybankbysector.item = bysector.item and bybankbysector.nace_codes = bysector.nace_codes
 group by bysector.item, bysector.nace_codes, bysector.label, bysector.total
-order by item, avgbysector desc;
+order by bysector.item, avgbysector desc;

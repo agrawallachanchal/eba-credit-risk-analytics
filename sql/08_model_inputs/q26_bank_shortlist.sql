@@ -40,4 +40,4 @@ from t
 inner join exposure on exposure.item = t.item and exposure.lei_code = t.lei_code
 inner join nperatio on nperatio.lei_code = t.lei_code
 inner join cet1 on cet1.lei_code = t.lei_code
-order by item, name;
+order by t.item, name;

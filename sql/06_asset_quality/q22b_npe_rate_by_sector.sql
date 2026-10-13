@@ -1,7 +1,7 @@
 -- Q22b | Which NACE sectors have the highest non-performing exposure rate (non-performing ÷ sector total), rather than the highest raw amount?
 -- Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2521301
 -- Note: Ranking sectors by non-performing rate tells a different story than Q22a: Construction has the
--- highest NPE rate (~3.0%), roughly double Real Estate's (~1.4%), despite Real Estate having a far
+-- highest NPE rate (6.4%), more than double Real Estate's (2.8%), despite Real Estate having a far
 -- larger absolute non-performing amount. Construction loans are proportionally riskier — a smaller
 -- sector, but a higher share of its lending has gone bad. Real Estate's top ranking in Q22a mainly
 -- reflects its overall size, not elevated risk per loan.

@@ -20,4 +20,4 @@ select bybank.item, lei_code, name, byitem.avg, bybank.total
 from bybank
 inner join byitem on byitem.item = bybank.item
 where bybank.total >= byitem.avg
-order by item, byitem.avg desc;
+order by bybank.item, byitem.avg desc;

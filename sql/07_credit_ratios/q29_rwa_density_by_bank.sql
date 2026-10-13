@@ -1,7 +1,7 @@
 -- Q29 | Which banks report the most risk-weighted books relative to their size? (RWA density)
 -- Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520532 (risk exposure amount), 2520522 (exposure value)
 -- RWA density = credit-risk risk exposure amount / exposure value, both "by exposure class (SA and IRB)".
--- Public-sector funding agencies show near-zero density (Kommuninvest 0.03%, SFIL 3.4%, Nederlandse Waterschapsbank 4.1%, Kuntarahoitus 1.5%) because their lending is government-backed.
+-- Public-sector funding agencies show near-zero density (Kommuninvest 0.03%, SFIL 3.6%, Nederlandse Waterschapsbank 4.2%, Kuntarahoitus 1.5%) because their lending is government-backed.
 -- Exposure value is gross of provisions for IRB, so density is comparable across banks but not to leverage-ratio exposure.
 -- Correction: items 2520502, 2520522 and 2520532 hold a total row per bank and exposure class (counterparty country = 0)
 -- plus a breakdown of the same exposure by the bank's top counterparty countries (country <> 0). Summing all rows

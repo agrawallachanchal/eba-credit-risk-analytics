@@ -13,6 +13,8 @@ An analysis of the EBA 2025 EU-wide Transparency Exercise (119 banks, 30 June 20
 
 Full summary: [docs/00_executive_summary.md](docs/00_executive_summary.md)
 
+**Explore it:** [web page](https://agrawallachanchal.github.io/eba-credit-risk-analytics/), with the 40 queries runnable in the browser and an adjustable stress test.
+
 ![Stress test page of the Power BI dashboard](dashboard/screenshots/03_stress.png)
 
 ## Repository
@@ -23,6 +25,7 @@ Full summary: [docs/00_executive_summary.md](docs/00_executive_summary.md)
 | [`sql/`](sql/) | Schema, load scripts and 40 analytical queries, one file per question |
 | [`model/`](model/) | Stress-test workbook (live formulas), sourced CET1 requirements, model notes |
 | [`dashboard/`](dashboard/) | Power BI report (`.pbix` and text-based project), DAX measures, build script, screenshots |
+| [`web/`](web/) | Static web page: overview, the queries run live in the browser (DuckDB-WASM), interactive stress test |
 | [`data/`](data/) | Download instructions and metadata; raw files are not stored |
 
 ## Reproduce

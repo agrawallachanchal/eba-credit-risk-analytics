@@ -1,6 +1,6 @@
 -- Q31 | Are concentration and the NPE ratio rising or falling across the four reporting periods?
 -- Periods: 202409, 202412, 202503, 202506 | Units: EUR mn | Item(s): 2520502, 2520603
--- The number of banks reporting differs by period (116, 120, 111, 120), so period-to-period changes mix real movement with sample changes.
+-- The number of banks reporting differs by period (115, 119, 110, 119, excluding the "All other banks" aggregate), so period-to-period changes mix real movement with sample changes.
 -- A like-for-like comparison would restrict to banks reporting in all four periods.
 -- Correction: items 2520502, 2520522 and 2520532 hold a total row per bank and exposure class (counterparty country = 0)
 -- plus a breakdown of the same exposure by the bank's top counterparty countries (country <> 0). Summing all rows

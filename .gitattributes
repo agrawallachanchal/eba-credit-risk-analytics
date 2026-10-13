@@ -9,4 +9,5 @@
 *.pbix  binary
 *.xlsx  binary
 *.parquet binary
+*.duckdb  binary
 *.png   binary

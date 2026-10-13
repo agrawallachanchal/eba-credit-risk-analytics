@@ -10,4 +10,4 @@ If you find something that should not be public (for example a credential, perso
 
 - No secrets are stored in the repository; `.gitignore` excludes common credential files.
 - Raw EBA files are not committed; they are downloaded from the EBA (see `data/README.md`).
-- GitHub Actions workflows use read-only permissions by default and pin third-party actions to a fixed version.
+- GitHub Actions workflows use read-only permissions by default and pin each action to a full commit SHA (release tag noted beside it). The web page loads one third-party script, DuckDB-WASM, at a pinned version from jsDelivr, and sets a Content Security Policy that allows scripts only from the page itself and that host.

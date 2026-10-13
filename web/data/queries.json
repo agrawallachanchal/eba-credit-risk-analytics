@@ -1,0 +1,449 @@
+[
+ {
+  "section": "Data quality",
+  "queries": [
+   {
+    "id": "Q1",
+    "question": "List all distinct banks (LEI_Code, Name, Country) from the metadata table.",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn",
+    "notes": [
+     "Note: Confirms the bank universe (name, country) the rest of the project is built on."
+    ],
+    "sql": "select distinct metadata.lei_code, metadata.name, metadata.country,\n       metadata.desc_country, credit.nsa\nfrom metadata\ninner join credit on metadata.lei_code = credit.lei_code;",
+    "file": "sql/01_data_quality/q1_list_banks.sql"
+   },
+   {
+    "id": "Q2",
+    "question": "Find LEI_Codes in credit that have no match in the metadata table (data quality check).",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn",
+    "notes": [
+     "Note: Found two unmatched LEI_Codes. One was a genuine placeholder row (not a real bank). The other belonged to a real bank (Banco de Crédito Social Cooperativo, ES) whose LEI_Code had been corrupted in the metadata file — Excel had auto-converted the 20-digit code into scientific notation (9.598E+19). Verified the true value against the credit table and the bank's country/name, then corrected it with an UPDATE. Re-running the check afterward left only the genuine placeholder row."
+    ],
+    "sql": "select distinct c.lei_code\nfrom credit as c\nleft join metadata as m on c.lei_code = m.lei_code\nwhere m.lei_code is null;",
+    "file": "sql/01_data_quality/q2_unmatched_lei_codes.sql"
+   },
+   {
+    "id": "Q3",
+    "question": "List the distinct Item/Label combinations available, and pick one to anchor the analysis on.",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn",
+    "notes": [
+     "Note: Found 89 distinct Item/Label combinations spanning several EBA templates. Chose three related items as the main anchors: 2520502 (Original Exposure), 2520522 (Exposure value), 2520532 (Risk exposure amount) — all 'by exposure class' versions. These were chosen because they exist in both the STA and IRB report types; the plain, non-broken-down totals only exist under STA and would silently exclude every IRB bank."
+    ],
+    "sql": "select distinct item, label\nfrom credit\norder by item asc;",
+    "file": "sql/01_data_quality/q3_item_label_catalogue.sql"
+   }
+  ]
+ },
+ {
+  "section": "Portfolio overview",
+  "queries": [
+   {
+    "id": "Q4",
+    "question": "For the latest period, what is the total credit exposure across all banks, for each anchor item?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520502",
+    "notes": [
+     "Run once per anchor item: replace 2520502 with 2520522 and 2520532 (the three measures are not additive).",
+     "Note: Run once per item (2520502, 2520522, 2520532). The three totals are not directly comparable — Original Exposure (gross) is larger than Exposure value (post credit-risk mitigation), which is larger again than Risk exposure amount (post risk-weighting). Each should be read on its own, not summed together.",
+     "Correction: items 2520502, 2520522 and 2520532 hold a total row per bank and exposure class (counterparty country = 0) plus a breakdown of the same exposure by the bank's top counterparty countries (country <> 0). Summing all rows counts that exposure about twice, so this query keeps country = 0 only."
+    ],
+    "sql": "select item, label, sum(amount) as total_credit_exposure\nfrom credit\nwhere period = '202506'\nand item = '2520502' and country = 0\ngroup by item, label;",
+    "file": "sql/02_portfolio_overview/q4_total_exposure_by_item.sql"
+   },
+   {
+    "id": "Q5",
+    "question": "How many distinct banks reported each anchor item in the latest period?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520502",
+    "notes": [
+     "Anchor item shown is 2520502; repeat with 2520522 and 2520532 for the other two measures.",
+     "Note: LEI 'XXXXXXXXXXXXXXXXXXXX' is the EBA's \"All other banks\" aggregate, not a bank. Bank-level measures exclude it (queries that join bank_metadata drop it automatically, because the metadata file stores the code in lower case)."
+    ],
+    "sql": "select count(distinct lei_code)\nfrom credit\nwhere period = '202506'\nand item = '2520502' and lei_code <> 'XXXXXXXXXXXXXXXXXXXX';",
+    "file": "sql/02_portfolio_overview/q5_reporting_banks_by_item.sql"
+   },
+   {
+    "id": "Q6",
+    "question": "What is the average exposure per bank, for each anchor item?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520502",
+    "notes": [
+     "Anchor item shown is 2520502; repeat with 2520522 and 2520532 for the other two measures.",
+     "Note: The question is ambiguous as worded — it could mean the average size of a single reported row, or the average size of a bank's whole book. Went with the second, more meaningful interpretation: total exposure divided by the number of distinct banks.",
+     "Correction: items 2520502, 2520522 and 2520532 hold a total row per bank and exposure class (counterparty country = 0) plus a breakdown of the same exposure by the bank's top counterparty countries (country <> 0). Summing all rows counts that exposure about twice, so this query keeps country = 0 only.",
+     "Note: LEI 'XXXXXXXXXXXXXXXXXXXX' is the EBA's \"All other banks\" aggregate, not a bank. Bank-level measures exclude it (queries that join bank_metadata drop it automatically, because the metadata file stores the code in lower case)."
+    ],
+    "sql": "select item, label, sum(amount)/count(distinct lei_code) as avg_exposure_per_bank\nfrom credit\nwhere period = '202506' and item = '2520502' and country = 0 and lei_code <> 'XXXXXXXXXXXXXXXXXXXX'\ngroup by item, label;",
+    "file": "sql/02_portfolio_overview/q6_average_exposure_per_bank.sql"
+   },
+   {
+    "id": "Q7",
+    "question": "What are the top 20 largest single exposure rows (bank + country + sector combination)?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520502",
+    "notes": [
+     "Anchor item shown is 2520502; repeat with 2520522 and 2520532 for the other two measures.",
+     "Note: These rows are dominated by single large, concentrated exposures (one bank's exposure to one country/sector) — not by overall bank size. A bank with a large but well-spread book across many rows won't appear here even if its total exposure is far bigger, because no single row captures its full size. Useful for spotting concentrated single bets, not for ranking the biggest banks overall (that's Q8).",
+     "Correction: items 2520502, 2520522 and 2520532 hold a total row per bank and exposure class (counterparty country = 0) plus a breakdown of the same exposure by the bank's top counterparty countries (country <> 0). Summing all rows counts that exposure about twice, so this query keeps country = 0 only."
+    ],
+    "sql": "select metadata.name, credit.lei_code, credit.item, credit.exposure, credit.amount\nfrom credit\ninner join metadata on metadata.lei_code = credit.lei_code\nwhere period = '202506' and item = '2520502' and credit.country = 0\norder by amount desc\nlimit 20;",
+    "file": "sql/02_portfolio_overview/q7_top20_exposure_rows.sql"
+   },
+   {
+    "id": "Q8",
+    "question": "What % of total exposure do the top 20 banks represent? (concentration risk)",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520502",
+    "notes": [
+     "Anchor item shown is 2520502; repeat with 2520522 and 2520532 for the other two measures.",
+     "Note: Top 20 banks' Original Exposure as a % of total portfolio. Built using CTEs: bank-level totals, top-20 sum, grand total, then divided.",
+     "Correction: items 2520502, 2520522 and 2520532 hold a total row per bank and exposure class (counterparty country = 0) plus a breakdown of the same exposure by the bank's top counterparty countries (country <> 0). Summing all rows counts that exposure about twice, so this query keeps country = 0 only.",
+     "Note: LEI 'XXXXXXXXXXXXXXXXXXXX' is the EBA's \"All other banks\" aggregate, not a bank. Bank-level measures exclude it (queries that join bank_metadata drop it automatically, because the metadata file stores the code in lower case)."
+    ],
+    "sql": "with exp_by_bank as (\n    select lei_code, sum(amount) as total\n    from credit\n    where period = '202506' and item = '2520502' and country = 0 and lei_code <> 'XXXXXXXXXXXXXXXXXXXX'\n    group by lei_code\n),\ntop20 as (\n    select sum(total) as top20total\n    from (\n        select lei_code, total\n        from exp_by_bank\n        order by total desc\n        limit 20\n    ) as t\n),\nall_total as (\n    select sum(total) as alltotal\n    from exp_by_bank\n)\nselect top20.top20total, all_total.alltotal,\n       top20.top20total / all_total.alltotal * 100 as pertop20\nfrom top20, all_total;",
+    "file": "sql/02_portfolio_overview/q8_top20_bank_concentration.sql"
+   }
+  ]
+ },
+ {
+  "section": "Geography",
+  "queries": [
+   {
+    "id": "Q9",
+    "question": "What is total exposure by NSA (bank home country)?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520502",
+    "notes": [
+     "Correction: items 2520502, 2520522 and 2520532 hold a total row per bank and exposure class (counterparty country = 0) plus a breakdown of the same exposure by the bank's top counterparty countries (country <> 0). Summing all rows counts that exposure about twice, so this query keeps country = 0 only."
+    ],
+    "sql": "select nsa, sum(amount) as total_exposure\nfrom credit\nwhere period = '202506' and item = '2520502' and country = 0\ngroup by nsa;",
+    "file": "sql/03_geography/q9_exposure_by_country.sql"
+   },
+   {
+    "id": "Q10",
+    "question": "Which 10 countries have the largest exposures?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520502",
+    "notes": [
+     "Correction: items 2520502, 2520522 and 2520532 hold a total row per bank and exposure class (counterparty country = 0) plus a breakdown of the same exposure by the bank's top counterparty countries (country <> 0). Summing all rows counts that exposure about twice, so this query keeps country = 0 only."
+    ],
+    "sql": "select nsa, sum(amount) as total_exposure\nfrom credit\nwhere period = '202506' and item = '2520502' and country = 0\ngroup by nsa\norder by total_exposure desc\nlimit 10;",
+    "file": "sql/03_geography/q10_top10_countries.sql"
+   },
+   {
+    "id": "Q11",
+    "question": "Which countries account for more than 5% of total exposure?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520502",
+    "notes": [
+     "Correction: items 2520502, 2520522 and 2520532 hold a total row per bank and exposure class (counterparty country = 0) plus a breakdown of the same exposure by the bank's top counterparty countries (country <> 0). Summing all rows counts that exposure about twice, so this query keeps country = 0 only."
+    ],
+    "sql": "with exp_by_nsa as (\n    select nsa, sum(amount) as total_exposure\n    from credit\n    where period = '202506' and item = '2520502' and country = 0\n    group by nsa\n)\nselect exp_by_nsa.nsa, exp_by_nsa.total_exposure\nfrom exp_by_nsa\nwhere exp_by_nsa.total_exposure > (\n    select 0.05 * sum(total_exposure)\n    from exp_by_nsa\n);",
+    "file": "sql/03_geography/q11_countries_over_5pct.sql"
+   },
+   {
+    "id": "Q12",
+    "question": "What % of total exposure does each country represent?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520502",
+    "notes": [
+     "Correction: items 2520502, 2520522 and 2520532 hold a total row per bank and exposure class (counterparty country = 0) plus a breakdown of the same exposure by the bank's top counterparty countries (country <> 0). Summing all rows counts that exposure about twice, so this query keeps country = 0 only."
+    ],
+    "sql": "with exp_by_nsa as (\n    select nsa, sum(amount) as total_exposure\n    from credit\n    where period = '202506' and item = '2520502' and country = 0\n    group by nsa\n),\nalltotal as (\n    select sum(total_exposure) as alltotal\n    from exp_by_nsa\n)\nselect exp_by_nsa.nsa, exp_by_nsa.total_exposure,\n       exp_by_nsa.total_exposure / alltotal.alltotal * 100 as per_exp\nfrom exp_by_nsa, alltotal;",
+    "file": "sql/03_geography/q12_country_share.sql"
+   }
+  ]
+ },
+ {
+  "section": "Sector (NACE)",
+  "queries": [
+   {
+    "id": "Q13",
+    "question": "What is total exposure by NACE sector code?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2521301",
+    "notes": [
+     "Note: Initial finding claimed nace_codes = 0 ('No breakdown') meant ~50% of exposure was unclassified. This was later found to be wrong — see the correction below.",
+     "Correction: item 2521301 repeats every bank-sector pair under Perf_Status 0 (total), 2, 4 and 5. Filtering on pref_status = 0 avoids counting the same exposure more than once (the first draft omitted it)."
+    ],
+    "sql": "select item, credit.label, credit.nace_codes, nace_metadata.label, sum(amount) as total_exposure\nfrom credit\ninner join nace_metadata on credit.nace_codes = nace_metadata.nace_codes\nwhere period = '202506' and item = '2521301' and credit.nace_codes != '0' and credit.pref_status = 0\ngroup by item, credit.label, credit.nace_codes, nace_metadata.label\norder by item;",
+    "file": "sql/04_sector_nace/q13_exposure_by_sector.sql"
+   },
+   {
+    "id": "Q13a",
+    "question": "Correction: is nace_codes = 0 really unclassified exposure?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2521301",
+    "notes": [
+     "Note: Checked each bank's nace_codes = 0 total against the sum of its 19 real sector rows — they matched almost exactly. This means nace_codes = 0 is a duplicate total, not unclassified exposure. Sector analysis should exclude nace_codes = 0. The original Q13 totals (using only the 19 real sectors) were correct all along."
+    ],
+    "sql": "with bybank as (\n    select item, nace_codes, lei_code, sum(amount) as totalnace0\n    from credit\n    where period = '202506' and item = '2521301' and nace_codes = '0'\n    group by item, nace_codes, lei_code\n),\nbybanknace as (\n    select item, lei_code, sum(amount) as totalallnace\n    from credit\n    where period = '202506' and item = '2521301' and nace_codes != '0'\n    group by item, lei_code\n)\nselect bybank.item, bybank.lei_code, totalnace0, totalallnace\nfrom bybank\ninner join bybanknace on bybank.item = bybanknace.item and bybank.lei_code = bybanknace.lei_code\norder by bybank.item;",
+    "file": "sql/04_sector_nace/q13a_nace0_duplicate_total_check.sql"
+   },
+   {
+    "id": "Q13b",
+    "question": "Within each NACE sector, what % of total exposure does each bank represent?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2521301",
+    "notes": [
+     "Correction: item 2521301 repeats every bank-sector pair under Perf_Status 0 (total), 2, 4 and 5. Filtering on pref_status = 0 avoids counting the same exposure more than once (the first draft omitted it)."
+    ],
+    "sql": "with bybankbysector as (\n    select item, lei_code, credit.nace_codes, nace_metadata.label, sum(amount) as total\n    from credit\n    inner join nace_metadata on nace_metadata.nace_codes = credit.nace_codes\n    where period = '202506' and item = '2521301' and credit.nace_codes != '0' and credit.pref_status = 0\n    group by item, lei_code, credit.nace_codes, nace_metadata.label\n),\nbysector as (\n    select item, nace_codes, label, sum(total) as total\n    from bybankbysector\n    group by item, nace_codes, label\n)\nselect bybankbysector.item, bybankbysector.lei_code, bybankbysector.nace_codes, bybankbysector.label,\n       bybankbysector.total, bysector.total,\n       bybankbysector.total / nullif(bysector.total, 0) * 100 as bybankbysectorconc\nfrom bybankbysector\ninner join bysector\n    on bysector.item = bybankbysector.item and bysector.nace_codes = bybankbysector.nace_codes\norder by bybankbysector.item, bybankbysector.nace_codes;",
+    "file": "sql/04_sector_nace/q13b_bank_share_within_sector.sql"
+   },
+   {
+    "id": "Q14",
+    "question": "Which NACE sectors have the highest average exposure size?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2521301",
+    "notes": [
+     "Note: Average exposure size per sector closely tracks Q13's total-exposure ranking — Real Estate leads both, followed by Manufacturing and Wholesale/Retail Trade. No sector shows an unusually high average relative to its total rank, meaning exposure size scales fairly evenly with the number of reporting banks — no sign of a small group of banks making unusually large, concentrated bets in any one sector.",
+     "Correction: item 2521301 repeats every bank-sector pair under Perf_Status 0 (total), 2, 4 and 5. Filtering on pref_status = 0 avoids counting the same exposure more than once (the first draft omitted it)."
+    ],
+    "sql": "with bybankbysector as (\n    select item, lei_code, credit.nace_codes, nace_metadata.label, sum(amount) as total\n    from credit\n    inner join nace_metadata on nace_metadata.nace_codes = credit.nace_codes\n    where period = '202506' and item = '2521301' and credit.nace_codes != '0' and credit.pref_status = 0\n    group by item, lei_code, credit.nace_codes, nace_metadata.label\n),\nbysector as (\n    select item, nace_codes, label, sum(total) as total\n    from bybankbysector\n    group by item, nace_codes, label\n)\nselect bysector.item, bysector.nace_codes, bysector.label, bysector.total,\n       bysector.total / count(distinct bybankbysector.lei_code) as avgbysector\nfrom bysector\ninner join bybankbysector\n    on bybankbysector.item = bysector.item and bybankbysector.nace_codes = bysector.nace_codes\ngroup by bysector.item, bysector.nace_codes, bysector.label, bysector.total\norder by bysector.item, avgbysector desc;",
+    "file": "sql/04_sector_nace/q14_average_exposure_by_sector.sql"
+   },
+   {
+    "id": "Q16",
+    "question": "Which sectors represent more than 10% of portfolio exposure?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2521301",
+    "notes": [
+     "Note: Real Estate, Manufacturing, and Wholesale/Retail Trade are consistently the three sectors exceeding 10% of exposure, together representing roughly half the classified portfolio — a genuine sector concentration. Separately, under item 2521303 (fair-value losses on non-performing exposure), Real Estate alone accounts for ~47% — nearly double its ~25% share of gross exposure — suggesting Real Estate exposures are disproportionately represented among distressed exposure relative to their overall size.",
+     "Correction: item 2521301 repeats every bank-sector pair under Perf_Status 0 (total), 2, 4 and 5. Filtering on pref_status = 0 avoids counting the same exposure more than once (the first draft omitted it)."
+    ],
+    "sql": "with bysector as (\n    select item, credit.nace_codes, nace_metadata.label, sum(amount) as sectortotal\n    from credit\n    inner join nace_metadata on nace_metadata.nace_codes = credit.nace_codes\n    where period = '202506' and item = '2521301' and credit.nace_codes != '0' and credit.pref_status = 0\n    group by item, credit.nace_codes, nace_metadata.label\n),\nitemtotal as (\n    select item, sum(sectortotal) as itemtotal\n    from bysector\n    group by item\n)\nselect item, nace_codes, label, sectorconc\nfrom (\n    select bysector.item, nace_codes, label, sectortotal, itemtotal,\n           sectortotal / itemtotal * 100 as sectorconc\n    from bysector\n    inner join itemtotal on itemtotal.item = bysector.item\n) as t\nwhere sectorconc >= 10;",
+    "file": "sql/04_sector_nace/q16_sectors_over_10pct.sql"
+   },
+   {
+    "id": "Q16b",
+    "question": "Which sectors hold the largest share of accumulated fair-value losses on non-performing exposure?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2521303",
+    "notes": [
+     "Added to make the Real Estate finding in Q16 reproducible (item 2521303 is reported by sector only, no status split)."
+    ],
+    "sql": "with bysector as (\n    select item, credit.nace_codes, nace_metadata.label, sum(amount) as sectortotal\n    from credit\n    inner join nace_metadata on nace_metadata.nace_codes = credit.nace_codes\n    where period = '202506' and item = '2521303' and credit.nace_codes != 0\n    group by item, credit.nace_codes, nace_metadata.label\n)\nselect item, nace_codes, label, sectortotal,\n       sectortotal / sum(sectortotal) over () * 100 as sector_share_pct\nfrom bysector\norder by sector_share_pct desc;",
+    "file": "sql/04_sector_nace/q16b_fair_value_losses_by_sector.sql"
+   }
+  ]
+ },
+ {
+  "section": "Bank level",
+  "queries": [
+   {
+    "id": "Q17",
+    "question": "Which banks have exposure above the overall average?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520502, 2520522, 2520532",
+    "notes": [
+     "Correction: items 2520502, 2520522 and 2520532 hold a total row per bank and exposure class (counterparty country = 0) plus a breakdown of the same exposure by the bank's top counterparty countries (country <> 0). Summing all rows counts that exposure about twice, so this query keeps country = 0 only."
+    ],
+    "sql": "with bybank as (\n    select item, credit.lei_code, name, sum(amount) as total\n    from credit\n    inner join bank_metadata on bank_metadata.lei_code = credit.lei_code\n    where period = '202506' and item in ('2520502', '2520522', '2520532') and credit.country = 0\n    group by item, credit.lei_code, name\n),\nbyitem as (\n    select item, sum(total) as total, sum(total) / count(distinct lei_code) as avg\n    from bybank\n    group by item\n)\nselect bybank.item, lei_code, name, byitem.avg, bybank.total\nfrom bybank\ninner join byitem on byitem.item = bybank.item\nwhere bybank.total >= byitem.avg\norder by bybank.item, byitem.avg desc;",
+    "file": "sql/05_bank_level/q17_banks_above_average.sql"
+   },
+   {
+    "id": "Q18",
+    "question": "Which banks cumulatively account for 50% of total exposure?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520502, 2520522, 2520532",
+    "notes": [
+     "Note: Roughly 10-12 banks (out of ~120) account for half of total reported exposure, across all three anchor items — confirming the concentration pattern already seen in Q8, now found independently using a running total instead of a fixed top-20 cutoff.",
+     "Correction: items 2520502, 2520522 and 2520532 hold a total row per bank and exposure class (counterparty country = 0) plus a breakdown of the same exposure by the bank's top counterparty countries (country <> 0). Summing all rows counts that exposure about twice, so this query keeps country = 0 only."
+    ],
+    "sql": "with bybank as (\n    select item, credit.lei_code, name, sum(amount) as total\n    from credit\n    inner join bank_metadata on bank_metadata.lei_code = credit.lei_code\n    where period = '202506' and item in ('2520502', '2520522', '2520532') and credit.country = 0\n    group by item, credit.lei_code, name\n),\nbyitem as (\n    select item, sum(total) as total, sum(total) / 2 as half\n    from bybank\n    group by item\n),\nbyrunningsum as (\n    select bybank.item, lei_code, name, bybank.total, half,\n           sum(bybank.total) over (partition by bybank.item order by bybank.total desc) as running_sum\n    from bybank\n    inner join byitem on byitem.item = bybank.item\n    group by bybank.item, lei_code, name, bybank.total, half\n),\nbyrn as (\n    select *, row_number() over (partition by item order by running_sum) as rn\n    from byrunningsum\n    where running_sum >= half\n),\nbyrn1 as (\n    select item, running_sum\n    from byrn\n    where rn = 1\n)\nselect byrunningsum.item, lei_code, name, total, half, byrunningsum.running_sum\nfrom byrunningsum\njoin byrn1 on byrn1.item = byrunningsum.item\nwhere byrunningsum.running_sum <= byrn1.running_sum;",
+    "file": "sql/05_bank_level/q18_banks_for_50pct_of_exposure.sql"
+   },
+   {
+    "id": "Q19",
+    "question": "Distribution of banks by exposure-size bucket (<€1bn, €1–10bn, €10–100bn, €100bn–1tri, >1tri).",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520502, 2520522, 2520532",
+    "notes": [
+     "Correction: items 2520502, 2520522 and 2520532 hold a total row per bank and exposure class (counterparty country = 0) plus a breakdown of the same exposure by the bank's top counterparty countries (country <> 0). Summing all rows counts that exposure about twice, so this query keeps country = 0 only."
+    ],
+    "sql": "with bybank as (\n    select item, credit.lei_code, name, sum(amount) as total\n    from credit\n    inner join bank_metadata on bank_metadata.lei_code = credit.lei_code\n    where period = '202506' and item in ('2520502', '2520522', '2520532') and credit.country = 0\n    group by item, credit.lei_code, name\n),\nbybucket as (\n    select item, lei_code, name, total,\n        case\n            when total < 1000 then '< 1bn'\n            when total < 10000 then '1bn to <10 bn'\n            when total < 100000 then '10 bn to <100 bn'\n            when total < 1000000 then '100 bn to <1 tri'\n            else '>= 1 tri'\n        end as exposure_bucket\n    from bybank\n)\nselect item, exposure_bucket, count(lei_code) as count\nfrom bybucket\ngroup by item, exposure_bucket\norder by item,\n    case exposure_bucket\n        when '< 1bn' then 1\n        when '1bn to <10 bn' then 2\n        when '10 bn to <100 bn' then 3\n        when '100 bn to <1 tri' then 4\n        when '>= 1 tri' then 5\n    end;",
+    "file": "sql/05_bank_level/q19_exposure_size_buckets.sql"
+   }
+  ]
+ },
+ {
+  "section": "Asset quality",
+  "queries": [
+   {
+    "id": "Q20",
+    "question": "What is total exposure split by Perf_Status (performing vs non-performing), including the full sub-category breakdown?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520603",
+    "notes": [
+     "Note: Of the 7 non-zero codes returned, only 1 (Performing) and 2 (Non Performing) are the true top- level, non-overlapping split. Codes 3, 4, 12, 23, and 222 are sub-categories nested inside 1 or 2 — summing all 7 together would double-count. Full breakdown shown for detail; the clean total is 1 + 2 only. Two related items (2520605, by exposure class; 2521301, the NACE item) were checked and found to be different, non-substitutable scopes — 2521301 turned out to be the better anchor for the sector-level breakdown in Q22."
+    ],
+    "sql": "select item, credit.label, credit.pref_status, prefstatus_metadata.label, sum(amount) as total_exposure\nfrom credit\ninner join prefstatus_metadata on prefstatus_metadata.pref_status = credit.pref_status\nwhere period = '202506' and item = '2520603' and credit.pref_status != 0\ngroup by item, credit.label, credit.pref_status, prefstatus_metadata.label;",
+    "file": "sql/06_asset_quality/q20_perf_status_split.sql"
+   },
+   {
+    "id": "Q20b",
+    "question": "Same breakdown, by country.",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520603",
+    "notes": [],
+    "sql": "select item, credit.label, credit.pref_status, prefstatus_metadata.label, nsa, sum(amount) as total_exposure\nfrom credit\ninner join prefstatus_metadata on prefstatus_metadata.pref_status = credit.pref_status\nwhere period = '202506' and item = '2520603' and credit.pref_status != 0\ngroup by item, credit.label, nsa, credit.pref_status, prefstatus_metadata.label\norder by credit.pref_status asc, total_exposure desc;",
+    "file": "sql/06_asset_quality/q20b_perf_status_by_country.sql"
+   },
+   {
+    "id": "Q21",
+    "question": "Which NSA country has the highest non-performing exposure amount?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520603",
+    "notes": [],
+    "sql": "select item, credit.label, credit.pref_status, prefstatus_metadata.label, nsa, sum(amount) as highest_exposure\nfrom credit\ninner join prefstatus_metadata on prefstatus_metadata.pref_status = credit.pref_status\nwhere period = '202506' and item = '2520603' and credit.pref_status = 2\ngroup by item, credit.label, nsa, credit.pref_status, prefstatus_metadata.label\norder by highest_exposure desc\nlimit 1;",
+    "file": "sql/06_asset_quality/q21_country_highest_npe.sql"
+   },
+   {
+    "id": "Q22",
+    "question": "What is non-performing exposure by sector, including all Perf_Status sub-categories?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2521301",
+    "notes": [],
+    "sql": "select item, credit.label, credit.pref_status, prefstatus_metadata.label, credit.nace_codes, nace_metadata.label,\n       sum(amount) as highest_exposure\nfrom credit\ninner join prefstatus_metadata on prefstatus_metadata.pref_status = credit.pref_status\ninner join nace_metadata on nace_metadata.nace_codes = credit.nace_codes\nwhere period = '202506' and item = '2521301' and credit.pref_status != 0 and credit.nace_codes != 0\ngroup by item, credit.label, credit.pref_status, prefstatus_metadata.label, credit.nace_codes, nace_metadata.label\norder by credit.pref_status asc, credit.nace_codes asc, highest_exposure desc;",
+    "file": "sql/06_asset_quality/q22_npe_by_sector_all_statuses.sql"
+   },
+   {
+    "id": "Q22a",
+    "question": "Which NACE sectors carry the largest non-performing exposure amount?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2521301",
+    "notes": [],
+    "sql": "select item, credit.label, credit.pref_status, prefstatus_metadata.label, credit.nace_codes, nace_metadata.label,\n       sum(amount) as highest_exposure\nfrom credit\ninner join prefstatus_metadata on prefstatus_metadata.pref_status = credit.pref_status\ninner join nace_metadata on nace_metadata.nace_codes = credit.nace_codes\nwhere period = '202506' and item = '2521301' and credit.pref_status = 2 and credit.nace_codes != 0\ngroup by item, credit.label, credit.pref_status, prefstatus_metadata.label, credit.nace_codes, nace_metadata.label\norder by highest_exposure desc;",
+    "file": "sql/06_asset_quality/q22a_npe_amount_by_sector.sql"
+   },
+   {
+    "id": "Q22b",
+    "question": "Which NACE sectors have the highest non-performing exposure rate (non-performing ÷ sector total), rather than the highest raw amount?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2521301",
+    "notes": [
+     "Note: Ranking sectors by non-performing rate tells a different story than Q22a: Construction has the highest NPE rate (6.4%), more than double Real Estate's (2.8%), despite Real Estate having a far larger absolute non-performing amount. Construction loans are proportionally riskier — a smaller sector, but a higher share of its lending has gone bad. Real Estate's top ranking in Q22a mainly reflects its overall size, not elevated risk per loan.",
+     "Correction: item 2521301 repeats every bank-sector pair under Perf_Status 0 (total), 2, 4 and 5. Filtering on pref_status = 0 avoids counting the same exposure more than once (the first draft omitted it)."
+    ],
+    "sql": "with sector_total as (\n    select credit.nace_codes, nace_metadata.label, sum(amount) as total_pref_status\n    from credit\n    inner join nace_metadata on nace_metadata.nace_codes = credit.nace_codes\n    where period = '202506' and item = '2521301' and credit.nace_codes != '0'\n      and credit.pref_status = 0\n    group by credit.nace_codes, nace_metadata.label\n),\nsector_npe as (\n    select nace_codes, sum(amount) as total_pref_status2\n    from credit\n    where period = '202506' and item = '2521301' and nace_codes != '0' and pref_status = '2'\n    group by nace_codes\n)\nselect sector_total.nace_codes, sector_total.label, sector_total.total_pref_status, sector_npe.total_pref_status2,\n       sector_npe.total_pref_status2 / sector_total.total_pref_status * 100 as npe_rate_pct\nfrom sector_total\ninner join sector_npe on sector_npe.nace_codes = sector_total.nace_codes\norder by npe_rate_pct desc;",
+    "file": "sql/06_asset_quality/q22b_npe_rate_by_sector.sql"
+   },
+   {
+    "id": "Q23",
+    "question": "What % of total portfolio exposure is non-performing vs performing? (board-level KPI)",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520603",
+    "notes": [
+     "Note: Non-performing ratio = 2.14% of total exposure (Performing + Non Performing, codes 1+2 only). This is consistent with typical EU bank NPL ratios (roughly 1-3%), confirming the calculation is realistic."
+    ],
+    "sql": "with by_prefstatus as (\n    select item, credit.pref_status, prefstatus_metadata.label, sum(amount) as total\n    from credit\n    inner join prefstatus_metadata on prefstatus_metadata.pref_status = credit.pref_status\n    where period = '202506' and item = '2520603' and credit.pref_status in ('1', '2')\n    group by item, credit.pref_status, prefstatus_metadata.label\n),\ntotal as (\n    select item, sum(total) as total_exposure\n    from by_prefstatus\n    group by item\n)\nselect by_prefstatus.item, pref_status, label, total, total_exposure,\n       total / total_exposure * 100 as exp_pct\nfrom by_prefstatus\ninner join total on total.item = by_prefstatus.item;",
+    "file": "sql/06_asset_quality/q23_portfolio_npe_ratio.sql"
+   }
+  ]
+ },
+ {
+  "section": "Credit ratios",
+  "queries": [
+   {
+    "id": "Q27",
+    "question": "How much accumulated impairment does each sector carry relative to its gross carrying amount?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2521301 (gross carrying amount), 2521302 (accumulated impairment)",
+    "notes": [
+     "Impairment ratio = accumulated impairment / gross carrying amount (all loans in the sector). The NACE template does not split impairment by performing status, so a sector-level NPE coverage ratio cannot be built from it."
+    ],
+    "sql": "with gross as (\n    select nace_codes, sum(amount) as gross_amt\n    from credit\n    where period = '202506' and item = '2521301' and pref_status = 0 and nace_codes != 0\n    group by nace_codes\n),\nimp as (\n    select nace_codes, sum(amount) as impairment\n    from credit\n    where period = '202506' and item = '2521302' and nace_codes != 0\n    group by nace_codes\n)\nselect gross.nace_codes, nace_metadata.label, gross.gross_amt, imp.impairment,\n       imp.impairment / nullif(gross.gross_amt, 0) * 100 as impairment_ratio_pct\nfrom gross\ninner join imp on imp.nace_codes = gross.nace_codes\ninner join nace_metadata on nace_metadata.nace_codes = gross.nace_codes\norder by impairment_ratio_pct desc;",
+    "file": "sql/07_credit_ratios/q27_impairment_ratio_by_sector.sql"
+   },
+   {
+    "id": "Q28",
+    "question": "How well are non-performing loans covered by provisions, by bank home country?",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520603 (gross carrying amount), 2520613 (impairment and provisions)",
+    "notes": [
+     "NPE coverage = provisions on non-performing loans / gross non-performing loans (Perf_Status 2). Computed from summed amounts, so larger banks weigh more (a ratio of sums, not an average of bank ratios)."
+    ],
+    "sql": "with npe as (\n    select nsa,\n           sum(case when item = '2520603' then amount end) as gross_npe,\n           sum(case when item = '2520613' then amount end) as provision_npe\n    from credit\n    where period = '202506' and item in ('2520603', '2520613') and pref_status = 2\n    group by nsa\n)\nselect nsa, gross_npe, provision_npe,\n       provision_npe / nullif(gross_npe, 0) * 100 as npe_coverage_pct\nfrom npe\norder by gross_npe desc;",
+    "file": "sql/07_credit_ratios/q28_npe_coverage_by_country.sql"
+   },
+   {
+    "id": "Q29",
+    "question": "Which banks report the most risk-weighted books relative to their size? (RWA density)",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520532 (risk exposure amount), 2520522 (exposure value)",
+    "notes": [
+     "RWA density = credit-risk risk exposure amount / exposure value, both \"by exposure class (SA and IRB)\". Public-sector funding agencies show near-zero density (Kommuninvest 0.03%, SFIL 3.6%, Nederlandse Waterschapsbank 4.2%, Kuntarahoitus 1.5%) because their lending is government-backed. Exposure value is gross of provisions for IRB, so density is comparable across banks but not to leverage-ratio exposure.",
+     "Correction: items 2520502, 2520522 and 2520532 hold a total row per bank and exposure class (counterparty country = 0) plus a breakdown of the same exposure by the bank's top counterparty countries (country <> 0). Summing all rows counts that exposure about twice, so this query keeps country = 0 only."
+    ],
+    "sql": "with bybank as (\n    select lei_code,\n           sum(case when item = '2520532' then amount end) as rea,\n           sum(case when item = '2520522' then amount end) as exposure_value\n    from credit\n    where period = '202506' and item in ('2520532', '2520522') and country = 0\n    group by lei_code\n)\nselect bank_metadata.name, bank_metadata.country, bybank.exposure_value, bybank.rea,\n       bybank.rea / nullif(bybank.exposure_value, 0) * 100 as rwa_density_pct\nfrom bybank\ninner join bank_metadata on bank_metadata.lei_code = bybank.lei_code\nwhere bybank.exposure_value > 0\norder by rwa_density_pct desc;",
+    "file": "sql/07_credit_ratios/q29_rwa_density_by_bank.sql"
+   },
+   {
+    "id": "Q30",
+    "question": "How concentrated is exposure by bank, by country and by sector? (Herfindahl-Hirschman index)",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520502 (banks, countries), 2521301 (sectors)",
+    "notes": [
+     "HHI = sum of squared percentage shares, 0 to 10,000. Common reading: under 1,500 unconcentrated, above 2,500 highly concentrated. Also reports the effective number of equal-sized units (10,000 / HHI).",
+     "Correction: items 2520502, 2520522 and 2520532 hold a total row per bank and exposure class (counterparty country = 0) plus a breakdown of the same exposure by the bank's top counterparty countries (country <> 0). Summing all rows counts that exposure about twice, so this query keeps country = 0 only.",
+     "Note: LEI 'XXXXXXXXXXXXXXXXXXXX' is the EBA's \"All other banks\" aggregate, not a bank. Bank-level measures exclude it (queries that join bank_metadata drop it automatically, because the metadata file stores the code in lower case)."
+    ],
+    "sql": "with bank as (\n    select 'bank' as dimension, lei_code as unit, sum(amount) as amt\n    from credit where period = '202506' and item = '2520502' and country = 0 and lei_code <> 'XXXXXXXXXXXXXXXXXXXX' group by lei_code\n),\ncountry as (\n    select 'country', nsa, sum(amount)\n    from credit where period = '202506' and item = '2520502' and country = 0 group by nsa\n),\nsector as (\n    select 'sector', nace_codes::text, sum(amount)\n    from credit where period = '202506' and item = '2521301' and pref_status = 0 and nace_codes != 0 group by nace_codes\n),\nunioned as (\n    select * from bank union all select * from country union all select * from sector\n),\nshares as (\n    select dimension, unit, amt, amt / sum(amt) over (partition by dimension) * 100 as share_pct\n    from unioned\n)\nselect dimension, count(*) as units,\n       round(sum(share_pct * share_pct)::numeric, 0) as hhi,\n       round((10000 / sum(share_pct * share_pct))::numeric, 1) as effective_units\nfrom shares\ngroup by dimension\norder by dimension;",
+    "file": "sql/07_credit_ratios/q30_concentration_hhi.sql"
+   },
+   {
+    "id": "Q31",
+    "question": "Are concentration and the NPE ratio rising or falling across the four reporting periods?",
+    "meta": "Periods: 202409, 202412, 202503, 202506 | Units: EUR mn | Item(s): 2520502, 2520603",
+    "notes": [
+     "The number of banks reporting differs by period (115, 119, 110, 119, excluding the \"All other banks\" aggregate), so period-to-period changes mix real movement with sample changes. A like-for-like comparison would restrict to banks reporting in all four periods.",
+     "Correction: items 2520502, 2520522 and 2520532 hold a total row per bank and exposure class (counterparty country = 0) plus a breakdown of the same exposure by the bank's top counterparty countries (country <> 0). Summing all rows counts that exposure about twice, so this query keeps country = 0 only.",
+     "Note: LEI 'XXXXXXXXXXXXXXXXXXXX' is the EBA's \"All other banks\" aggregate, not a bank. Bank-level measures exclude it (queries that join bank_metadata drop it automatically, because the metadata file stores the code in lower case)."
+    ],
+    "sql": "with exposure as (\n    select period, lei_code, sum(amount) as amt\n    from credit where item = '2520502' and country = 0 and lei_code <> 'XXXXXXXXXXXXXXXXXXXX' group by period, lei_code\n),\nranked as (\n    select period, lei_code, amt, row_number() over (partition by period order by amt desc) as rn\n    from exposure\n),\nconcentration as (\n    select period, count(*) as banks_reporting, sum(amt) as total_exposure,\n           sum(case when rn <= 20 then amt end) / sum(amt) * 100 as top20_share_pct\n    from ranked group by period\n),\nnpe as (\n    select period,\n           sum(case when pref_status = 2 then amount end) / sum(amount) * 100 as npe_ratio_pct\n    from credit\n    where item = '2520603' and pref_status in (1, 2)\n    group by period\n)\nselect concentration.period, banks_reporting, total_exposure, top20_share_pct, npe.npe_ratio_pct\nfrom concentration\ninner join npe on npe.period = concentration.period\norder by concentration.period;",
+    "file": "sql/07_credit_ratios/q31_trend_across_periods.sql"
+   },
+   {
+    "id": "Q32",
+    "question": "Are the banks that drive exposure concentration also the ones with higher NPE ratios?",
+    "meta": "Period: 202506 (Jun 2025) | Item(s): 2520502 (exposure), 2520603 (loans, performing status 1 and 2)",
+    "notes": [
+     "Splits banks into the 11 largest (about half of all exposure, see Q18) and the rest, and compares the pooled NPE ratio of each group. Also reports the correlation between log exposure size and bank NPE ratio.",
+     "Correction: items 2520502, 2520522 and 2520532 hold a total row per bank and exposure class (counterparty country = 0) plus a breakdown of the same exposure by the bank's top counterparty countries (country <> 0). Summing all rows counts that exposure about twice, so this query keeps country = 0 only.",
+     "Note: LEI 'XXXXXXXXXXXXXXXXXXXX' is the EBA's \"All other banks\" aggregate, not a bank. Bank-level measures exclude it (queries that join bank_metadata drop it automatically, because the metadata file stores the code in lower case)."
+    ],
+    "sql": "with exposure as (\n    select lei_code, sum(amount) as exposure\n    from credit where period = '202506' and item = '2520502' and country = 0 and lei_code <> 'XXXXXXXXXXXXXXXXXXXX' group by lei_code\n),\nloans as (\n    select lei_code,\n           sum(amount) as loans_gross,\n           sum(case when pref_status = 2 then amount end) as npe\n    from credit\n    where period = '202506' and item = '2520603' and pref_status in (1, 2)\n    group by lei_code\n),\njoined as (\n    select exposure.lei_code, exposure.exposure, loans.loans_gross, loans.npe,\n           row_number() over (order by exposure.exposure desc) as size_rank\n    from exposure\n    inner join loans on loans.lei_code = exposure.lei_code\n    where loans.loans_gross > 0\n)\nselect case when size_rank <= 11 then 'largest 11 banks' else 'other banks' end as bank_group,\n       count(*) as banks,\n       sum(npe) / sum(loans_gross) * 100 as pooled_npe_ratio_pct,\n       avg(npe / loans_gross * 100) as simple_average_npe_ratio_pct\nfrom joined\ngroup by 1\nunion all\nselect 'correlation: ln(exposure) vs bank NPE ratio', count(*),\n       corr(ln(exposure), npe / loans_gross), null\nfrom joined;",
+    "file": "sql/07_credit_ratios/q32_size_versus_risk.sql"
+   }
+  ]
+ },
+ {
+  "section": "Model inputs",
+  "queries": [
+   {
+    "id": "Q24",
+    "question": "What is each bank's non-performing exposure ratio? (bank-level version of Q23)",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520603",
+    "notes": [],
+    "sql": "with bybank as (\n    select item, credit.pref_status, prefstatus_metadata.label, credit.lei_code, bank_metadata.name, sum(amount) as bankwise\n    from credit\n    inner join bank_metadata on bank_metadata.lei_code = credit.lei_code\n    inner join prefstatus_metadata on prefstatus_metadata.pref_status = credit.pref_status\n    where period = '202506' and item = '2520603' and credit.pref_status in ('1', '2')\n    group by item, credit.pref_status, prefstatus_metadata.label, credit.lei_code, bank_metadata.name\n),\ntotal as (\n    select item, lei_code, sum(bankwise) as total\n    from bybank\n    group by item, lei_code\n)\nselect bybank.item, pref_status, label, bybank.lei_code, name, bankwise, total, ((bankwise / total) * 100) as bank_np_pct\nfrom bybank\ninner join total on total.item = bybank.item and total.lei_code = bybank.lei_code\nwhere pref_status = 2\norder by bank_np_pct desc;",
+    "file": "sql/08_model_inputs/q24_bank_npe_ratio.sql"
+   },
+   {
+    "id": "Q25",
+    "question": "What is each bank's current CET1 capital ratio?",
+    "meta": "Period: 202506 (Jun 2025) | Item(s): 2520140",
+    "notes": [
+     "Note: Amount is not in one unit across the oth table. Capital and P&L items (e.g. 2520102, 2520138, 2520335) are in EUR mn; ratio items (2520140, 2520905) are plain decimals (0.13 = 13%). Very high values (Kommuninvest ~352%, Kuntarahoitus ~89%) belong to municipal funding agencies with near-zero risk-weighted assets and are genuine, not data errors."
+    ],
+    "sql": "select item, label, oth.lei_code, bank_metadata.name, amount\nfrom oth\ninner join bank_metadata on bank_metadata.lei_code = oth.lei_code\nwhere period = '202506' and item = '2520140'\norder by amount;",
+    "file": "sql/08_model_inputs/q25_bank_cet1_ratio.sql"
+   },
+   {
+    "id": "Q26",
+    "question": "Combine total assets, NPE ratio and CET1 ratio into one reference table (shortlist for the stress test)",
+    "meta": "Period: 202506 (Jun 2025) | Item(s): 2521010 (total assets), 2520603 (loans), 2520140 (CET1 ratio)",
+    "notes": [],
+    "sql": "with t as (\n    select distinct oth.item, oth.label, oth.lei_code, bank_metadata.name\n    from oth\n    inner join bank_metadata on bank_metadata.lei_code = oth.lei_code\n    where period = '202506' and item in ('2521010')\n),\nexposure as (\n    select item, lei_code, sum(amount) as exp_total\n    from oth\n    where period = '202506' and item = '2521010'\n    group by item, lei_code\n),\nprefstatus as (\n    select lei_code, sum(amount) as exp_prefstatus\n    from credit\n    where period = '202506' and item = '2520603' and pref_status in ('1', '2')\n    group by lei_code\n),\nnpe as (\n    select lei_code, sum(amount) as npe\n    from credit\n    where period = '202506' and item = '2520603' and pref_status = 2\n    group by lei_code\n),\nnperatio as (\n    select npe.lei_code, ((npe / exp_prefstatus) * 100) as nperatio\n    from npe\n    inner join prefstatus on prefstatus.lei_code = npe.lei_code\n),\ncet1 as (\n    select lei_code, amount as cet1ratio\n    from oth\n    where period = '202506' and item = '2520140'\n)\nselect t.item, label, t.lei_code, name, exp_total, nperatio, cet1ratio\nfrom t\ninner join exposure on exposure.item = t.item and exposure.lei_code = t.lei_code\ninner join nperatio on nperatio.lei_code = t.lei_code\ninner join cet1 on cet1.lei_code = t.lei_code\norder by t.item, name;",
+    "file": "sql/08_model_inputs/q26_bank_shortlist.sql"
+   },
+   {
+    "id": "Q26b",
+    "question": "Provision coverage of performing and non-performing loans, per bank",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520603 (gross carrying amount), 2520613 (impairment and provisions)",
+    "notes": [],
+    "sql": "with c as (\n    select item, pref_status, lei_code, amount\n    from credit\n    where period = '202506' and item in ('2520603', '2520613') and pref_status in ('1', '2')\n),\nt as (\n    select lei_code,\n           sum(case when item = '2520603' and pref_status = 1 then amount else 0 end) as gross_p,\n           sum(case when item = '2520613' and pref_status = 1 then amount else 0 end) as provision_p,\n           sum(case when item = '2520603' and pref_status = 2 then amount else 0 end) as gross_np,\n           sum(case when item = '2520613' and pref_status = 2 then amount else 0 end) as provision_np\n    from c\n    group by lei_code\n)\nselect t.lei_code, gross_p, provision_p, round((provision_p / nullif(gross_p, 0)) * 100, 3) as coverage_p,\n       gross_np, provision_np, round((provision_np / nullif(gross_np, 0)) * 100, 3) as coverage_np\nfrom t;",
+    "file": "sql/08_model_inputs/q26b_npe_coverage_ratio.sql"
+   },
+   {
+    "id": "Q26c",
+    "question": "CET1 capital and total risk exposure amount (RWA), per bank",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn | Item(s): 2520102 (CET1 capital), 2520138 (total RWA)",
+    "notes": [],
+    "sql": "select item, label, lei_code, amount\nfrom oth\nwhere period = '202506' and item in ('2520102', '2520138')\norder by item;",
+    "file": "sql/08_model_inputs/q26c_cet1_capital_and_rwa.sql"
+   },
+   {
+    "id": "Q33",
+    "question": "One row per stress-model bank with every input the model uses (feeds model/EBA_stress_test_model.xlsx, sheet Bank Inputs)",
+    "meta": "Period: 202506 (Jun 2025) | Units: EUR mn; CET1 ratio is a decimal (0.13 = 13%)",
+    "notes": [
+     "Items: 2521010 total assets, 2520138 RWA, 2520102 CET1 capital, 2520140 CET1 ratio, 2520332 profit before tax, 2520333 profit after tax (oth; half-year cumulative, n_quarters = 2); 2520603 gross loans by Perf_Status 1 and 2, 2520613 provisions on non-performing loans (credit, NPE sheet) Kommuninvest is extracted for reference; the model excludes it from the stress run (assumption A16)."
+    ],
+    "sql": "with banks as (\n    select lei_code, name\n    from bank_metadata\n    where lei_code in (\n        '5493006QMFDDMYWIAM13', -- Banco Santander\n        '529900S9YO2JHTIIDG38', -- BAWAG Group\n        'R0MUWSFPU8MPRO8K5P83', -- BNP Paribas\n        '2138008AVF4W7FMW8W87', -- CEC Bank\n        '851WYGNLUQLFZBSYGB56', -- Commerzbank\n        '7LTWFZYICNSX8D621K86', -- Deutsche Bank\n        'FR969500TJ5KRTCJQWXH', -- Groupe Credit Agricole\n        'F0HUI1NY1AZMJMD8LP67', -- HSBC Continental Europe\n        '549300NYKK9MWM7GGW15', -- ING Groep\n        'EV2XZWMLLXF2QRX0CD47', -- Kommuninvest (reference only)\n        '549300C9KPZR0VZ16R05', -- Morgan Stanley Europe Holding SE\n        '485100FX5Y9YLAQLNP12'  -- Revolut Holdings Europe\n    )\n),\no as (\n    select lei_code,\n           sum(case when item = 2521010 then amount end) as total_assets,\n           sum(case when item = 2520138 then amount end) as rwa,\n           sum(case when item = 2520102 then amount end) as cet1_capital,\n           sum(case when item = 2520140 then amount end) as cet1_ratio,\n           sum(case when item = 2520332 then amount end) as pbt_h1,\n           sum(case when item = 2520333 then amount end) as pat_h1\n    from oth\n    where period = 202506 and item in (2521010, 2520138, 2520102, 2520140, 2520332, 2520333)\n    group by lei_code\n),\nc as (\n    select lei_code,\n           sum(case when item = 2520603 and pref_status = '1' then amount else 0 end) as performing,\n           sum(case when item = 2520603 and pref_status = '2' then amount else 0 end) as non_performing,\n           sum(case when item = 2520613 and pref_status = '2' then amount else 0 end) as npe_provisions\n    from credit\n    where period = 202506 and item in (2520603, 2520613) and pref_status in ('1', '2')\n    group by lei_code\n)\nselect banks.lei_code, banks.name,\n       o.total_assets, o.rwa, o.cet1_capital, o.cet1_ratio,\n       c.performing, c.non_performing, c.npe_provisions,\n       o.pbt_h1, o.pat_h1,\n       round(c.non_performing / nullif(c.performing + c.non_performing, 0), 6) as npe_ratio,\n       round(c.npe_provisions / nullif(c.non_performing, 0), 6) as npe_coverage\nfrom banks\nleft join o on o.lei_code = banks.lei_code\nleft join c on c.lei_code = banks.lei_code\norder by banks.name;",
+    "file": "sql/08_model_inputs/q33_stress_model_inputs.sql"
+   }
+  ]
+ }
+]

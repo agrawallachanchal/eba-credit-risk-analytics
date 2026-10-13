@@ -248,7 +248,7 @@ bybanknace as (
 select bybank.item, bybank.lei_code, totalnace0, totalallnace
 from bybank
 inner join bybanknace on bybank.item = bybanknace.item and bybank.lei_code = bybanknace.lei_code
-order by item;
+order by bybank.item;
 ```
 
 Checked each bank's nace_codes = 0 total against the sum of its 19 real sector rows — they matched almost exactly. This means nace_codes = 0 is a duplicate total, not unclassified exposure. Sector analysis should exclude nace_codes = 0. The original Q13 totals (using only the 19 real sectors) were correct all along.
@@ -276,7 +276,7 @@ from bysector
 inner join bybankbysector
     on bybankbysector.item = bysector.item and bybankbysector.nace_codes = bysector.nace_codes
 group by bysector.item, bysector.nace_codes, bysector.label, bysector.total
-order by item, avgbysector desc;
+order by bysector.item, avgbysector desc;
 ```
 
 Average exposure size per sector closely tracks Q13's total-exposure ranking — Real Estate leads both, followed by Manufacturing and Wholesale/Retail Trade. No sector shows an unusually high average relative to its total rank, meaning exposure size scales fairly evenly with the number of reporting banks — no sign of a small group of banks making unusually large, concentrated bets in any one sector.
@@ -304,7 +304,7 @@ select bybankbysector.item, bybankbysector.lei_code, bybankbysector.nace_codes, 
 from bybankbysector
 inner join bysector
     on bysector.item = bybankbysector.item and bysector.nace_codes = bybankbysector.nace_codes
-order by item, nace_codes;
+order by bybankbysector.item, bybankbysector.nace_codes;
 ```
 
 ### Q16. Which sectors represent more than 10% of portfolio exposure?
@@ -365,7 +365,7 @@ select bybank.item, lei_code, name, byitem.avg, bybank.total
 from bybank
 inner join byitem on byitem.item = bybank.item
 where bybank.total >= byitem.avg
-order by item, byitem.avg desc;
+order by bybank.item, byitem.avg desc;
 ```
 
 **Correction (country totals).** Items 2520502, 2520522 and 2520532 report a total row per bank and exposure class (counterparty `country` = 0) and, for banks on the full template, a second breakdown of the same exposure by their top counterparty countries. Summing every row counted that exposure about twice. The query now keeps `country = 0`. Banks above the average: 27 for original exposure, 28 for exposure value and 28 for risk exposure amount, out of 119.
@@ -663,7 +663,7 @@ from t
 inner join exposure on exposure.item = t.item and exposure.lei_code = t.lei_code
 inner join nperatio on nperatio.lei_code = t.lei_code
 inner join cet1 on cet1.lei_code = t.lei_code
-order by item, name;
+order by t.item, name;
 ```
 
 Combines Q24, Q25 and total assets (item 2521010). Used to shortlist banks for the stress test.

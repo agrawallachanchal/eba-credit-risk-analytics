@@ -24,6 +24,7 @@ Checks performed on the data, the queries and the stress model. Each entry recor
 | Q-2 | Sector results recomputed after the Perf_Status correction | Real Estate 25.5% of classified exposure; Construction NPE rate 6.4% |
 | Q-3 | Concentration found two independent ways | Top-20 share (Q8, 66.4%) and running total (Q18, 11–13 banks for half of exposure) agree |
 | Q-4 | Trend query checked for composition effects | Banks reporting vary by period (115, 119, 110, 119); the top-20 share is not read as a trend |
+| Q-5 | All 40 queries run unchanged on DuckDB-WASM 1.32.0 (the web page) against the extract built by `web/build_web_data.py` | 39 of 40 results identical to PostgreSQL; Q3 lists only the items in the extract. Five queries (Q13a, Q13b, Q14, Q17, Q26) had an unqualified column in `ORDER BY` that PostgreSQL resolves to the output column and DuckDB 1.4 rejects as ambiguous; the table alias was added, results unchanged |
 
 ## Stress model inputs
 
@@ -41,6 +42,7 @@ Checks performed on the data, the queries and the stress model. Each entry recor
 |---|---|---|
 | O-1 | Workbook recalculated in LibreOffice | 1,390 formulas, 0 errors |
 | O-2 | Every headroom figure (11 banks × 4 scenarios × 2 views) recomputed in Python from the raw inputs | Maximum absolute difference 5 × 10⁻¹⁶ |
+| O-6 | Web page stress test (`web/js/stress-model.js`) against `data/processed/stress_results.csv`, all 88 rows, in a headless browser | Every headroom equal to 2 decimals as displayed; maximum absolute difference 5 × 10⁻⁷ (the CSV is rounded to 6 decimals) |
 | O-3 | Sensitivity base cases equal the Summary results | In-workbook check cells return 0 |
 | O-4 | Order of magnitude against the ECB | 3-year adverse credit loss 1.5–4.2 pp of RWA at the core banks, against 5.0 pp loan-loss contribution in the ECB aggregate; lower, as expected given L9 (current coverage on new defaults) and the ECB's wider loss perimeter, which also covers impairments on performing exposures |
 | O-5 | Direction of results | The three banks that breach (BNP Paribas, BAWAG, ING) are the three with the lowest starting headroom (2.2–2.4 pp) |

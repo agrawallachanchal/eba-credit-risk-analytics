@@ -1,0 +1,87 @@
+table sector
+	lineageTag: 9360bc7f-f5a5-ccfc-5d56-6e5c9dfac0ef
+
+	measure 'Sector Gross Carrying Amount' = SUM ( sector[gross_carrying_amount] )
+		formatString: #,0
+		lineageTag: ceaaa2a5-124d-7066-89ea-3aba919ce293
+
+	measure 'Sector Share of Exposure' =
+			DIVIDE (
+			[Sector Gross Carrying Amount],
+			CALCULATE ( [Sector Gross Carrying Amount], REMOVEFILTERS ( sector ) )
+			)
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 2bcabfeb-3124-141c-efa6-c46fd8af5f07
+
+	measure 'HHI by Sector' =
+			VAR Total = CALCULATE ( [Sector Gross Carrying Amount], REMOVEFILTERS ( sector ) )
+			RETURN
+			    SUMX (
+			        VALUES ( sector[nace_code] ),
+			        POWER ( DIVIDE ( CALCULATE ( [Sector Gross Carrying Amount] ), Total ) * 100, 2 )
+			    )
+		formatString: #,0
+		lineageTag: b71ac241-c44d-8227-734a-399017ad21e0
+
+	measure 'Sector NPE Rate' = DIVIDE ( SUM ( sector[non_performing] ), SUM ( sector[gross_carrying_amount] ) )
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 71679de4-79dd-9dd1-be4d-7fdd67354c25
+
+	measure 'Sector Impairment Ratio' = DIVIDE ( SUM ( sector[accumulated_impairment] ), SUM ( sector[gross_carrying_amount] ) )
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 9c74acbe-2c5e-a41e-8945-77d611755561
+
+	column nace_code
+		dataType: int64
+		lineageTag: 81711421-d985-fa07-bb79-1e51ff836210
+		summarizeBy: none
+		sourceColumn: nace_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column sector
+		dataType: string
+		lineageTag: 03ff0250-233c-55c1-47eb-58a952387416
+		summarizeBy: none
+		sourceColumn: sector
+
+		annotation SummarizationSetBy = Automatic
+
+	column gross_carrying_amount
+		dataType: double
+		formatString: #,0.00
+		lineageTag: cdf3a500-72b6-fea3-9742-6ec6f80bfe5b
+		summarizeBy: sum
+		sourceColumn: gross_carrying_amount
+
+		annotation SummarizationSetBy = Automatic
+
+	column non_performing
+		dataType: double
+		formatString: #,0.00
+		lineageTag: 91bd74ec-22ed-bb33-fc9e-5ad20e4d3569
+		summarizeBy: sum
+		sourceColumn: non_performing
+
+		annotation SummarizationSetBy = Automatic
+
+	column accumulated_impairment
+		dataType: double
+		formatString: #,0.00
+		lineageTag: 06b6eb4f-5c9a-19bc-e136-60d119a41492
+		summarizeBy: sum
+		sourceColumn: accumulated_impairment
+
+		annotation SummarizationSetBy = Automatic
+
+	partition sector = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("__DATA_FOLDER__sector.csv"), [Delimiter = ",", Columns = 5, Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {{"nace_code", Int64.Type}, {"sector", type text}, {"gross_carrying_amount", type number}, {"non_performing", type number}, {"accumulated_impairment", type number}}, "en-US")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

@@ -1,0 +1,56 @@
+table npe_trend
+	lineageTag: b963d9da-86b4-af6e-5a7e-c01cb8c9eb61
+
+	measure 'NPE Ratio Trend' =
+			DIVIDE (
+			SUM ( npe_trend[non_performing] ),
+			SUM ( npe_trend[performing] ) + SUM ( npe_trend[non_performing] )
+			)
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 6923d0e7-54c3-030e-32fe-96dd3dd4816d
+
+	column period
+		dataType: string
+		lineageTag: ae7b943a-358b-7c4f-ce40-904b5e162b5e
+		summarizeBy: none
+		sourceColumn: period
+
+		annotation SummarizationSetBy = Automatic
+
+	column banks_reporting
+		dataType: int64
+		lineageTag: e7084ff9-12fd-5c13-850a-7c4e5cc0954c
+		summarizeBy: none
+		sourceColumn: banks_reporting
+
+		annotation SummarizationSetBy = Automatic
+
+	column performing
+		dataType: double
+		formatString: #,0.00
+		lineageTag: cf0aa9c1-7a51-3f0d-127d-2e93b0f45009
+		summarizeBy: sum
+		sourceColumn: performing
+
+		annotation SummarizationSetBy = Automatic
+
+	column non_performing
+		dataType: double
+		formatString: #,0.00
+		lineageTag: 219a423a-68c0-9eca-2502-87be5e4a7b97
+		summarizeBy: sum
+		sourceColumn: non_performing
+
+		annotation SummarizationSetBy = Automatic
+
+	partition npe_trend = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("__DATA_FOLDER__npe_trend.csv"), [Delimiter = ",", Columns = 4, Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {{"period", type text}, {"banks_reporting", Int64.Type}, {"performing", type number}, {"non_performing", type number}}, "en-US")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

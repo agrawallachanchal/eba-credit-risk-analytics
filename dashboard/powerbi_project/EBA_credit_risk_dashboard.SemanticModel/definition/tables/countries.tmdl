@@ -1,0 +1,30 @@
+table countries
+	lineageTag: 3f753e31-2634-d770-c07b-4a4aa02e6bbf
+
+	column country_code
+		dataType: string
+		lineageTag: 92dee587-cf66-2778-26df-d1ea1e51fffa
+		summarizeBy: none
+		sourceColumn: country_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column country
+		dataType: string
+		lineageTag: 4500feea-c7e6-0734-83df-bfebd39af8c0
+		summarizeBy: none
+		sourceColumn: country
+
+		annotation SummarizationSetBy = Automatic
+
+	partition countries = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("__DATA_FOLDER__countries.csv"), [Delimiter = ",", Columns = 2, Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {{"country_code", type text}, {"country", type text}}, "en-US")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

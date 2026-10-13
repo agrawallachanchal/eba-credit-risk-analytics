@@ -1,0 +1,88 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "fe085cf78f2f6c72623b",
+  "position": {
+    "x": 965,
+    "y": 535,
+    "z": 6,
+    "width": 295,
+    "height": 170,
+    "tabOrder": 6
+  },
+  "visual": {
+    "visualType": "multiRowCard",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "bank_exposure"
+                    }
+                  },
+                  "Property": "HHI by Bank"
+                }
+              },
+              "queryRef": "bank_exposure.HHI by Bank",
+              "nativeQueryRef": "HHI by Bank"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "bank_exposure"
+                    }
+                  },
+                  "Property": "HHI by Country"
+                }
+              },
+              "queryRef": "bank_exposure.HHI by Country",
+              "nativeQueryRef": "HHI by Country"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "sector"
+                    }
+                  },
+                  "Property": "HHI by Sector"
+                }
+              },
+              "queryRef": "sector.HHI by Sector",
+              "nativeQueryRef": "HHI by Sector"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Concentration (HHI) · Q30'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

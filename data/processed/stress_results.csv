@@ -1,0 +1,89 @@
+lei_code,bank,role,scenario_code,scenario,view,cet1_ratio_today,cet1_requirement,headroom_today,stressed_cet1_ratio,headroom,below_requirement
+529900S9YO2JHTIIDG38,BAWAG Group,Core,S1,1-year baseline,Instant loss,0.125484,0.1033,0.022184,0.118393,0.015093,No
+529900S9YO2JHTIIDG38,BAWAG Group,Core,S1,1-year baseline,With earnings,0.125484,0.1033,0.022184,0.144875,0.041575,No
+R0MUWSFPU8MPRO8K5P83,BNP Paribas,Core,S1,1-year baseline,Instant loss,0.124587,0.1029,0.021687,0.119847,0.016947,No
+R0MUWSFPU8MPRO8K5P83,BNP Paribas,Core,S1,1-year baseline,With earnings,0.124587,0.1029,0.021687,0.133009,0.030109,No
+5493006QMFDDMYWIAM13,Banco Santander,Core,S1,1-year baseline,Instant loss,0.129849,0.0967,0.033149,0.124407,0.027707,No
+5493006QMFDDMYWIAM13,Banco Santander,Core,S1,1-year baseline,With earnings,0.129849,0.0967,0.033149,0.141418,0.044718,No
+2138008AVF4W7FMW8W87,CEC Bank,Core,S1,1-year baseline,Instant loss,0.239689,0.122,0.117689,0.233197,0.111197,No
+2138008AVF4W7FMW8W87,CEC Bank,Core,S1,1-year baseline,With earnings,0.239689,0.122,0.117689,0.250047,0.128047,No
+851WYGNLUQLFZBSYGB56,Commerzbank,Core,S1,1-year baseline,Instant loss,0.14559,0.1031,0.04249,0.1384,0.0353,No
+851WYGNLUQLFZBSYGB56,Commerzbank,Core,S1,1-year baseline,With earnings,0.14559,0.1031,0.04249,0.152411,0.049311,No
+7LTWFZYICNSX8D621K86,Deutsche Bank,Core,S1,1-year baseline,Instant loss,0.142373,0.1124,0.029973,0.137019,0.024619,No
+7LTWFZYICNSX8D621K86,Deutsche Bank,Core,S1,1-year baseline,With earnings,0.142373,0.1124,0.029973,0.154828,0.042428,No
+FR969500TJ5KRTCJQWXH,Groupe Crédit Agricole,Core,S1,1-year baseline,Instant loss,0.175817,0.098,0.077817,0.167712,0.069712,No
+FR969500TJ5KRTCJQWXH,Groupe Crédit Agricole,Core,S1,1-year baseline,With earnings,0.175817,0.098,0.077817,0.181912,0.083912,No
+F0HUI1NY1AZMJMD8LP67,HSBC Continental Europe,Core,S1,1-year baseline,Instant loss,0.15473,0.097,0.05773,0.15191,0.05491,No
+F0HUI1NY1AZMJMD8LP67,HSBC Continental Europe,Core,S1,1-year baseline,With earnings,0.15473,0.097,0.05773,0.160567,0.063567,No
+549300NYKK9MWM7GGW15,ING Groep,Core,S1,1-year baseline,Instant loss,0.132619,0.1087,0.023919,0.125924,0.017224,No
+549300NYKK9MWM7GGW15,ING Groep,Core,S1,1-year baseline,With earnings,0.132619,0.1087,0.023919,0.142451,0.033751,No
+549300C9KPZR0VZ16R05,Morgan Stanley Europe Holding SE,Core,S1,1-year baseline,Instant loss,0.179993,0.0956,0.084393,0.17686,0.08126,No
+549300C9KPZR0VZ16R05,Morgan Stanley Europe Holding SE,Core,S1,1-year baseline,With earnings,0.179993,0.0956,0.084393,0.186013,0.090413,No
+485100FX5Y9YLAQLNP12,Revolut Holdings Europe,Reference case,S1,1-year baseline,Instant loss,0.313238,0.0997,0.213538,0.302169,0.202469,No
+485100FX5Y9YLAQLNP12,Revolut Holdings Europe,Reference case,S1,1-year baseline,With earnings,0.313238,0.0997,0.213538,0.339423,0.239723,No
+529900S9YO2JHTIIDG38,BAWAG Group,Core,S2,1-year adverse,Instant loss,0.125484,0.1033,0.022184,0.114848,0.011548,No
+529900S9YO2JHTIIDG38,BAWAG Group,Core,S2,1-year adverse,With earnings,0.125484,0.1033,0.022184,0.143137,0.039837,No
+R0MUWSFPU8MPRO8K5P83,BNP Paribas,Core,S2,1-year adverse,Instant loss,0.124587,0.1029,0.021687,0.117477,0.014577,No
+R0MUWSFPU8MPRO8K5P83,BNP Paribas,Core,S2,1-year adverse,With earnings,0.124587,0.1029,0.021687,0.131848,0.028948,No
+5493006QMFDDMYWIAM13,Banco Santander,Core,S2,1-year adverse,Instant loss,0.129849,0.0967,0.033149,0.121686,0.024986,No
+5493006QMFDDMYWIAM13,Banco Santander,Core,S2,1-year adverse,With earnings,0.129849,0.0967,0.033149,0.140085,0.043385,No
+2138008AVF4W7FMW8W87,CEC Bank,Core,S2,1-year adverse,Instant loss,0.239689,0.122,0.117689,0.229952,0.107952,No
+2138008AVF4W7FMW8W87,CEC Bank,Core,S2,1-year adverse,With earnings,0.239689,0.122,0.117689,0.248456,0.126456,No
+851WYGNLUQLFZBSYGB56,Commerzbank,Core,S2,1-year adverse,Instant loss,0.14559,0.1031,0.04249,0.134805,0.031705,No
+851WYGNLUQLFZBSYGB56,Commerzbank,Core,S2,1-year adverse,With earnings,0.14559,0.1031,0.04249,0.150649,0.047549,No
+7LTWFZYICNSX8D621K86,Deutsche Bank,Core,S2,1-year adverse,Instant loss,0.142373,0.1124,0.029973,0.134342,0.021942,No
+7LTWFZYICNSX8D621K86,Deutsche Bank,Core,S2,1-year adverse,With earnings,0.142373,0.1124,0.029973,0.153516,0.041116,No
+FR969500TJ5KRTCJQWXH,Groupe Crédit Agricole,Core,S2,1-year adverse,Instant loss,0.175817,0.098,0.077817,0.16366,0.06566,No
+FR969500TJ5KRTCJQWXH,Groupe Crédit Agricole,Core,S2,1-year adverse,With earnings,0.175817,0.098,0.077817,0.179927,0.081927,No
+F0HUI1NY1AZMJMD8LP67,HSBC Continental Europe,Core,S2,1-year adverse,Instant loss,0.15473,0.097,0.05773,0.1505,0.0535,No
+F0HUI1NY1AZMJMD8LP67,HSBC Continental Europe,Core,S2,1-year adverse,With earnings,0.15473,0.097,0.05773,0.159876,0.062876,No
+549300NYKK9MWM7GGW15,ING Groep,Core,S2,1-year adverse,Instant loss,0.132619,0.1087,0.023919,0.122576,0.013876,No
+549300NYKK9MWM7GGW15,ING Groep,Core,S2,1-year adverse,With earnings,0.132619,0.1087,0.023919,0.140811,0.032111,No
+549300C9KPZR0VZ16R05,Morgan Stanley Europe Holding SE,Core,S2,1-year adverse,Instant loss,0.179993,0.0956,0.084393,0.175293,0.079693,No
+549300C9KPZR0VZ16R05,Morgan Stanley Europe Holding SE,Core,S2,1-year adverse,With earnings,0.179993,0.0956,0.084393,0.185245,0.089645,No
+485100FX5Y9YLAQLNP12,Revolut Holdings Europe,Reference case,S2,1-year adverse,Instant loss,0.313238,0.0997,0.213538,0.296635,0.196935,No
+485100FX5Y9YLAQLNP12,Revolut Holdings Europe,Reference case,S2,1-year adverse,With earnings,0.313238,0.0997,0.213538,0.336711,0.237011,No
+529900S9YO2JHTIIDG38,BAWAG Group,Core,S3,3-year baseline,Instant loss,0.125484,0.1033,0.022184,0.104211,0.000911,No
+529900S9YO2JHTIIDG38,BAWAG Group,Core,S3,3-year baseline,With earnings,0.125484,0.1033,0.022184,0.183656,0.080356,No
+R0MUWSFPU8MPRO8K5P83,BNP Paribas,Core,S3,3-year baseline,Instant loss,0.124587,0.1029,0.021687,0.110367,0.007467,No
+R0MUWSFPU8MPRO8K5P83,BNP Paribas,Core,S3,3-year baseline,With earnings,0.124587,0.1029,0.021687,0.149852,0.046952,No
+5493006QMFDDMYWIAM13,Banco Santander,Core,S3,3-year baseline,Instant loss,0.129849,0.0967,0.033149,0.113522,0.016822,No
+5493006QMFDDMYWIAM13,Banco Santander,Core,S3,3-year baseline,With earnings,0.129849,0.0967,0.033149,0.164557,0.067857,No
+2138008AVF4W7FMW8W87,CEC Bank,Core,S3,3-year baseline,Instant loss,0.239689,0.122,0.117689,0.220214,0.098214,No
+2138008AVF4W7FMW8W87,CEC Bank,Core,S3,3-year baseline,With earnings,0.239689,0.122,0.117689,0.270763,0.148763,No
+851WYGNLUQLFZBSYGB56,Commerzbank,Core,S3,3-year baseline,Instant loss,0.14559,0.1031,0.04249,0.12402,0.02092,No
+851WYGNLUQLFZBSYGB56,Commerzbank,Core,S3,3-year baseline,With earnings,0.14559,0.1031,0.04249,0.166053,0.062953,No
+7LTWFZYICNSX8D621K86,Deutsche Bank,Core,S3,3-year baseline,Instant loss,0.142373,0.1124,0.029973,0.12631,0.01391,No
+7LTWFZYICNSX8D621K86,Deutsche Bank,Core,S3,3-year baseline,With earnings,0.142373,0.1124,0.029973,0.179736,0.067336,No
+FR969500TJ5KRTCJQWXH,Groupe Crédit Agricole,Core,S3,3-year baseline,Instant loss,0.175817,0.098,0.077817,0.151504,0.053504,No
+FR969500TJ5KRTCJQWXH,Groupe Crédit Agricole,Core,S3,3-year baseline,With earnings,0.175817,0.098,0.077817,0.194104,0.096104,No
+F0HUI1NY1AZMJMD8LP67,HSBC Continental Europe,Core,S3,3-year baseline,Instant loss,0.15473,0.097,0.05773,0.146271,0.049271,No
+F0HUI1NY1AZMJMD8LP67,HSBC Continental Europe,Core,S3,3-year baseline,With earnings,0.15473,0.097,0.05773,0.172241,0.075241,No
+549300NYKK9MWM7GGW15,ING Groep,Core,S3,3-year baseline,Instant loss,0.132619,0.1087,0.023919,0.112534,0.003834,No
+549300NYKK9MWM7GGW15,ING Groep,Core,S3,3-year baseline,With earnings,0.132619,0.1087,0.023919,0.162114,0.053414,No
+549300C9KPZR0VZ16R05,Morgan Stanley Europe Holding SE,Core,S3,3-year baseline,Instant loss,0.179993,0.0956,0.084393,0.170593,0.074993,No
+549300C9KPZR0VZ16R05,Morgan Stanley Europe Holding SE,Core,S3,3-year baseline,With earnings,0.179993,0.0956,0.084393,0.198053,0.102453,No
+485100FX5Y9YLAQLNP12,Revolut Holdings Europe,Reference case,S3,3-year baseline,Instant loss,0.313238,0.0997,0.213538,0.280032,0.180332,No
+485100FX5Y9YLAQLNP12,Revolut Holdings Europe,Reference case,S3,3-year baseline,With earnings,0.313238,0.0997,0.213538,0.391793,0.292093,No
+529900S9YO2JHTIIDG38,BAWAG Group,Core,S4,3-year adverse,Instant loss,0.125484,0.1033,0.022184,0.089143,-0.014157,Yes
+529900S9YO2JHTIIDG38,BAWAG Group,Core,S4,3-year adverse,With earnings,0.125484,0.1033,0.022184,0.176272,0.072972,No
+R0MUWSFPU8MPRO8K5P83,BNP Paribas,Core,S4,3-year adverse,Instant loss,0.124587,0.1029,0.021687,0.100294,-0.002606,Yes
+R0MUWSFPU8MPRO8K5P83,BNP Paribas,Core,S4,3-year adverse,With earnings,0.124587,0.1029,0.021687,0.144917,0.042017,No
+5493006QMFDDMYWIAM13,Banco Santander,Core,S4,3-year adverse,Instant loss,0.129849,0.0967,0.033149,0.101958,0.005258,No
+5493006QMFDDMYWIAM13,Banco Santander,Core,S4,3-year adverse,With earnings,0.129849,0.0967,0.033149,0.15889,0.06219,No
+2138008AVF4W7FMW8W87,CEC Bank,Core,S4,3-year adverse,Instant loss,0.239689,0.122,0.117689,0.20642,0.08442,No
+2138008AVF4W7FMW8W87,CEC Bank,Core,S4,3-year adverse,With earnings,0.239689,0.122,0.117689,0.264004,0.142004,No
+851WYGNLUQLFZBSYGB56,Commerzbank,Core,S4,3-year adverse,Instant loss,0.14559,0.1031,0.04249,0.108741,0.005641,No
+851WYGNLUQLFZBSYGB56,Commerzbank,Core,S4,3-year adverse,With earnings,0.14559,0.1031,0.04249,0.158566,0.055466,No
+7LTWFZYICNSX8D621K86,Deutsche Bank,Core,S4,3-year adverse,Instant loss,0.142373,0.1124,0.029973,0.114932,0.002532,No
+7LTWFZYICNSX8D621K86,Deutsche Bank,Core,S4,3-year adverse,With earnings,0.142373,0.1124,0.029973,0.174161,0.061761,No
+FR969500TJ5KRTCJQWXH,Groupe Crédit Agricole,Core,S4,3-year adverse,Instant loss,0.175817,0.098,0.077817,0.134283,0.036283,No
+FR969500TJ5KRTCJQWXH,Groupe Crédit Agricole,Core,S4,3-year adverse,With earnings,0.175817,0.098,0.077817,0.185665,0.087665,No
+F0HUI1NY1AZMJMD8LP67,HSBC Continental Europe,Core,S4,3-year adverse,Instant loss,0.15473,0.097,0.05773,0.140279,0.043279,No
+F0HUI1NY1AZMJMD8LP67,HSBC Continental Europe,Core,S4,3-year adverse,With earnings,0.15473,0.097,0.05773,0.169305,0.072305,No
+549300NYKK9MWM7GGW15,ING Groep,Core,S4,3-year adverse,Instant loss,0.132619,0.1087,0.023919,0.098306,-0.010394,Yes
+549300NYKK9MWM7GGW15,ING Groep,Core,S4,3-year adverse,With earnings,0.132619,0.1087,0.023919,0.155143,0.046443,No
+549300C9KPZR0VZ16R05,Morgan Stanley Europe Holding SE,Core,S4,3-year adverse,Instant loss,0.179993,0.0956,0.084393,0.163935,0.068335,No
+549300C9KPZR0VZ16R05,Morgan Stanley Europe Holding SE,Core,S4,3-year adverse,With earnings,0.179993,0.0956,0.084393,0.194791,0.099191,No
+485100FX5Y9YLAQLNP12,Revolut Holdings Europe,Reference case,S4,3-year adverse,Instant loss,0.313238,0.0997,0.213538,0.256512,0.156812,No
+485100FX5Y9YLAQLNP12,Revolut Holdings Europe,Reference case,S4,3-year adverse,With earnings,0.313238,0.0997,0.213538,0.380268,0.280568,No

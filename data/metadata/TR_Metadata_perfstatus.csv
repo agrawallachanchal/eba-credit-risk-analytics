@@ -1,0 +1,16 @@
+﻿Perf_Status,Label
+0,No breakdown by Perf_status
+1,Performing
+11,Performing - of which exposures with forbearance measures
+12,Performing Of which: Instruments with significant increase in credit risk since initial recognition but not credit-impaired (Stage 2)
+2,Non Performing
+21,"Non Performing Of which:
+exposures with forbearance measures"
+22,"Non Performing Of which:
+Unlikely to pay that are not past-due or past-due <= 90 days "
+222,Non Performing Of which: Stage 2 
+23,NON performing - of which Stage 3
+3,Performing but past due >30 days and <=90 days
+4,Non Performing and Defaulted
+5,Loans and advances subject to impairment
+,

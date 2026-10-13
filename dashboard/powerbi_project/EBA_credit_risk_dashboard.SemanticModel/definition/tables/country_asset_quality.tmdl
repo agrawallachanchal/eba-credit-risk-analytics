@@ -1,0 +1,61 @@
+table country_asset_quality
+	lineageTag: 70fc81ed-4863-b013-7454-7b57a0ae589c
+
+	measure 'Country NPE Ratio' =
+			DIVIDE (
+			SUM ( country_asset_quality[non_performing] ),
+			SUM ( country_asset_quality[performing] ) + SUM ( country_asset_quality[non_performing] )
+			)
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: b66c35b6-bac4-f5b2-4702-2cd06c8b9d46
+
+	measure 'NPE Coverage' = DIVIDE ( SUM ( country_asset_quality[npe_provisions] ), SUM ( country_asset_quality[non_performing] ) )
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 53d66e95-cef3-bcb1-dd63-88ad4114210d
+
+	column country_code
+		dataType: string
+		lineageTag: 7e0e1717-d1d0-a566-7bd4-6a04f4f51d2e
+		summarizeBy: none
+		sourceColumn: country_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column performing
+		dataType: double
+		formatString: #,0.00
+		lineageTag: da9960b2-d755-105f-23af-d22a6db36c06
+		summarizeBy: sum
+		sourceColumn: performing
+
+		annotation SummarizationSetBy = Automatic
+
+	column non_performing
+		dataType: double
+		formatString: #,0.00
+		lineageTag: a51097ac-9380-141c-f840-8ed084a6fb84
+		summarizeBy: sum
+		sourceColumn: non_performing
+
+		annotation SummarizationSetBy = Automatic
+
+	column npe_provisions
+		dataType: double
+		formatString: #,0.00
+		lineageTag: 5e6d3763-72ee-e39e-8f0a-cec28c47062c
+		summarizeBy: sum
+		sourceColumn: npe_provisions
+
+		annotation SummarizationSetBy = Automatic
+
+	partition country_asset_quality = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("__DATA_FOLDER__country_asset_quality.csv"), [Delimiter = ",", Columns = 4, Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {{"country_code", type text}, {"performing", type number}, {"non_performing", type number}, {"npe_provisions", type number}}, "en-US")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

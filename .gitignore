@@ -1,0 +1,41 @@
+# Large raw EBA files: download them (see data/README.md), do not commit them
+data/raw/
+
+# Office / OS / editor noise
+~$*
+.~lock.*
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*.bak
+
+# Python
+__pycache__/
+.venv/
+.ipynb_checkpoints/
+
+# Local database dumps and secrets
+*.dump
+.env
+
+# Power BI: local build copy and Desktop cache files
+dashboard/build/
+**/.pbi/localSettings.json
+**/.pbi/cache.abf
+
+# Secrets and credentials: never commit
+*.pem
+*.key
+*.pfx
+*.p12
+.env.*
+secrets/
+credentials*
+*.pgpass
+.pgpass
+
+# Editors and local tooling
+.vscode/
+.idea/
+*.log

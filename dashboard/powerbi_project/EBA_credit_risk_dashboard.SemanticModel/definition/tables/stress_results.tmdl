@@ -1,0 +1,152 @@
+table stress_results
+	lineageTag: 6df530fe-bf2a-a9ac-6505-f5107e466386
+
+	measure 'Headroom After Shock' = SUM ( stress_results[headroom] )
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 245e3467-a9ad-f49f-ae42-1569adaf8cc7
+
+	measure 'Headroom Today' = MAX ( stress_results[headroom_today] )
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 796d23ea-ee48-757a-8093-d45b17902e91
+
+	measure 'Stressed CET1 Ratio' = SUM ( stress_results[stressed_cet1_ratio] )
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 255aa0ce-f323-f6ee-6386-04b5631e6e43
+
+	measure 'Core Banks Below Requirement' =
+			CALCULATE (
+			DISTINCTCOUNT ( stress_results[lei_code] ),
+			stress_results[role] = "Core",
+			stress_results[below_requirement] = "Yes"
+			) + 0
+		formatString: 0
+		lineageTag: 0d730d6e-7ee5-ac0a-6c5a-3c2897074bf3
+
+	measure 'Median Headroom Core' = CALCULATE ( MEDIAN ( stress_results[headroom] ), stress_results[role] = "Core" )
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 6da3fd23-9bd1-2854-c9ef-2b2737fe15a7
+
+	measure 'Median Headroom Today Core' =
+			CALCULATE (
+			MEDIAN ( stress_results[headroom_today] ),
+			stress_results[role] = "Core",
+			stress_results[view] = "Instant loss"
+			)
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 3759b1fe-ac74-e79b-8cd5-1e87f460d1be
+
+	measure 'Headroom Colour' = IF ( [Headroom After Shock] < 0, "#B42318", IF ( [Headroom After Shock] < 0.01, "#D97706", "#1F3A4D" ) )
+		lineageTag: 903d8150-de19-23e0-d1fe-76784e472c95
+
+	column lei_code
+		dataType: string
+		lineageTag: 1e209d49-e83b-7a02-fec5-15edb149ceb3
+		summarizeBy: none
+		sourceColumn: lei_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column bank
+		dataType: string
+		lineageTag: 595c1bce-4d7a-05db-54a0-123212f6be47
+		summarizeBy: none
+		sourceColumn: bank
+
+		annotation SummarizationSetBy = Automatic
+
+	column role
+		dataType: string
+		lineageTag: 2a745c1d-a93d-5738-e047-a9001a250a98
+		summarizeBy: none
+		sourceColumn: role
+
+		annotation SummarizationSetBy = Automatic
+
+	column scenario_code
+		dataType: string
+		lineageTag: f13be2c2-10d1-11a5-a805-6e877558e1ab
+		summarizeBy: none
+		sourceColumn: scenario_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column scenario
+		dataType: string
+		lineageTag: 7f15687a-13ed-8693-fb3f-7ebc2d6fcea2
+		summarizeBy: none
+		sourceColumn: scenario
+
+		annotation SummarizationSetBy = Automatic
+
+	column view
+		dataType: string
+		lineageTag: 61509365-7100-69e7-d109-89202e34201b
+		summarizeBy: none
+		sourceColumn: view
+
+		annotation SummarizationSetBy = Automatic
+
+	column cet1_ratio_today
+		dataType: double
+		formatString: #,0.00
+		lineageTag: d22769f1-c8a5-a3ed-1373-f398e9af0da4
+		summarizeBy: sum
+		sourceColumn: cet1_ratio_today
+
+		annotation SummarizationSetBy = Automatic
+
+	column cet1_requirement
+		dataType: double
+		formatString: #,0.00
+		lineageTag: 0c836c93-cb41-dbba-f3ee-2116b7ba823f
+		summarizeBy: sum
+		sourceColumn: cet1_requirement
+
+		annotation SummarizationSetBy = Automatic
+
+	column headroom_today
+		dataType: double
+		formatString: #,0.00
+		lineageTag: 83a04201-0778-5361-fb79-15a18deea33b
+		summarizeBy: sum
+		sourceColumn: headroom_today
+
+		annotation SummarizationSetBy = Automatic
+
+	column stressed_cet1_ratio
+		dataType: double
+		formatString: #,0.00
+		lineageTag: d23b04c4-37ad-e799-05f6-1fc8d5c8b5fb
+		summarizeBy: sum
+		sourceColumn: stressed_cet1_ratio
+
+		annotation SummarizationSetBy = Automatic
+
+	column headroom
+		dataType: double
+		formatString: #,0.00
+		lineageTag: 6638140c-d76e-1e29-d964-c654e5bb2153
+		summarizeBy: sum
+		sourceColumn: headroom
+
+		annotation SummarizationSetBy = Automatic
+
+	column below_requirement
+		dataType: string
+		lineageTag: 7a822dc6-c549-dbdf-5268-e9102a8db8e9
+		summarizeBy: none
+		sourceColumn: below_requirement
+
+		annotation SummarizationSetBy = Automatic
+
+	partition stress_results = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("__DATA_FOLDER__stress_results.csv"), [Delimiter = ",", Columns = 12, Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {{"lei_code", type text}, {"bank", type text}, {"role", type text}, {"scenario_code", type text}, {"scenario", type text}, {"view", type text}, {"cet1_ratio_today", type number}, {"cet1_requirement", type number}, {"headroom_today", type number}, {"stressed_cet1_ratio", type number}, {"headroom", type number}, {"below_requirement", type text}}, "en-US")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

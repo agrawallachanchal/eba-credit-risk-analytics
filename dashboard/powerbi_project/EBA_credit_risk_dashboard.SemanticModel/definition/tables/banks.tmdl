@@ -1,0 +1,46 @@
+table banks
+	lineageTag: c5c380cd-ef3a-c854-09ff-4acb115aee91
+
+	column lei_code
+		dataType: string
+		lineageTag: 6c302b47-965b-dd43-d9bc-5315a37216c0
+		summarizeBy: none
+		sourceColumn: lei_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column name
+		dataType: string
+		lineageTag: 54d23a86-1a6d-b01e-26e7-e38dbaa50d2d
+		summarizeBy: none
+		sourceColumn: name
+
+		annotation SummarizationSetBy = Automatic
+
+	column country_code
+		dataType: string
+		lineageTag: 22caf323-8947-f3e2-8fb8-94ec04e1379e
+		summarizeBy: none
+		sourceColumn: country_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column country
+		dataType: string
+		lineageTag: 115dcc74-1984-39fd-2cd1-db32579c6297
+		summarizeBy: none
+		sourceColumn: country
+
+		annotation SummarizationSetBy = Automatic
+
+	partition banks = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("__DATA_FOLDER__banks.csv"), [Delimiter = ",", Columns = 4, Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {{"lei_code", type text}, {"name", type text}, {"country_code", type text}, {"country", type text}}, "en-US")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

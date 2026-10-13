@@ -1,0 +1,20 @@
+nace_code,sector,gross_carrying_amount,non_performing,accumulated_impairment
+1,"A Agriculture, forestry and fishing",241796.13,10010.67,5906.65
+2,B Mining and quarrying,61431.85,1852.72,1311.02
+3,C Manufacturing,971492.16,36775.00,23614.10
+4,"D Electricity, gas, steam and air conditioning supply",372488.88,5183.60,3339.36
+5,E Water supply,68635.32,967.91,722.17
+6,F Construction,307959.27,19679.96,12656.24
+7,G Wholesale and retail trade,828023.81,34628.13,23443.66
+8,H Transport and storage,346388.65,8493.43,5320.91
+9,I Accommodation and food service activities,165614.04,9204.54,5739.44
+10,J Information and communication,219101.75,5663.83,3190.50
+11,K Financial and insurance activities,298889.10,5981.00,3985.97
+12,L Real estate activities,1640222.10,45982.26,22216.46
+13,"M Professional, scientific and technical activities",344460.30,11450.16,7642.42
+14,N Administrative and support service activities,226997.42,6639.08,4030.70
+15,"O Public administration and defence, compulsory social security",14568.57,48.78,60.80
+16,P Education,19119.27,709.71,450.88
+17,Q Human health services and social work activities,113193.36,2817.54,1920.28
+18,"R Arts, entertainment and recreation",32055.65,1318.59,825.88
+19,S Other services,168387.50,5098.13,4424.68

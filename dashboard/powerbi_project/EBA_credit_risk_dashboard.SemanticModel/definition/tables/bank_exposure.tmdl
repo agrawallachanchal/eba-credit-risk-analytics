@@ -1,0 +1,134 @@
+table bank_exposure
+	lineageTag: 6a9a97ef-ab6c-5b1b-f388-289c72212620
+
+	measure 'Original Exposure' = SUM ( bank_exposure[original_exposure] )
+		formatString: #,0
+		lineageTag: f9dec5b2-cc15-75ae-326d-a9dff1f4a717
+
+	measure 'Original Exposure EUR tn' = DIVIDE ( [Original Exposure], 1000000 )
+		formatString: 0.0
+		lineageTag: ed07fcb2-0efe-08c9-6c99-9c4ed23794fc
+
+	measure 'Country Share of Exposure' =
+			DIVIDE (
+			[Original Exposure],
+			CALCULATE ( [Original Exposure], REMOVEFILTERS ( countries ) )
+			)
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: f066094d-cc62-023e-3cf3-b927f4fc1ef9
+
+	measure 'Top 20 Bank Share' =
+			VAR Total = CALCULATE ( [Original Exposure], bank_exposure[is_named_bank] = TRUE () )
+			VAR Top20 =
+			    TOPN (
+			        20,
+			        CALCULATETABLE ( VALUES ( bank_exposure[lei_code] ), bank_exposure[is_named_bank] = TRUE () ),
+			        CALCULATE ( [Original Exposure] )
+			    )
+			RETURN
+			    DIVIDE ( SUMX ( Top20, CALCULATE ( [Original Exposure] ) ), Total )
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 637b7eb3-2f3b-d929-c2d7-fac64448729a
+
+	measure 'Banks Holding Half of Exposure' =
+			VAR Total = CALCULATE ( [Original Exposure], bank_exposure[is_named_bank] = TRUE () )
+			VAR ByBank =
+			    ADDCOLUMNS (
+			        CALCULATETABLE ( VALUES ( bank_exposure[lei_code] ), bank_exposure[is_named_bank] = TRUE () ),
+			        "@exp", CALCULATE ( [Original Exposure] )
+			    )
+			VAR WithRunningTotal =
+			    ADDCOLUMNS (
+			        ByBank,
+			        "@before",
+			            VAR ThisBank = [@exp]
+			            RETURN SUMX ( FILTER ( ByBank, [@exp] > ThisBank ), [@exp] )
+			    )
+			RETURN
+			    COUNTROWS ( FILTER ( WithRunningTotal, [@before] < Total / 2 ) )
+		formatString: 0
+		lineageTag: 5dcb4cd7-3d87-7057-a618-1a865df6e47d
+
+	measure 'HHI by Bank' =
+			VAR Total =
+			    CALCULATE ( [Original Exposure], REMOVEFILTERS ( bank_exposure ), bank_exposure[is_named_bank] = TRUE () )
+			RETURN
+			    SUMX (
+			        CALCULATETABLE ( VALUES ( bank_exposure[lei_code] ), bank_exposure[is_named_bank] = TRUE () ),
+			        POWER ( DIVIDE ( CALCULATE ( [Original Exposure] ), Total ) * 100, 2 )
+			    )
+		formatString: #,0
+		lineageTag: 1bf6bec5-b407-25a6-0008-f385e6de51d3
+
+	measure 'HHI by Country' =
+			VAR Total = CALCULATE ( [Original Exposure], REMOVEFILTERS ( bank_exposure ) )
+			RETURN
+			    SUMX (
+			        VALUES ( bank_exposure[country_code] ),
+			        POWER ( DIVIDE ( CALCULATE ( [Original Exposure] ), Total ) * 100, 2 )
+			    )
+		formatString: #,0
+		lineageTag: 97a91800-9c0f-2afc-c787-f80d52b8343f
+
+	column lei_code
+		dataType: string
+		lineageTag: 2cfec9bd-5670-4fcb-57a1-219863ccca80
+		summarizeBy: none
+		sourceColumn: lei_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column country_code
+		dataType: string
+		lineageTag: dcd4f84e-18e7-0062-9663-d0bf318796ed
+		summarizeBy: none
+		sourceColumn: country_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_named_bank
+		dataType: boolean
+		lineageTag: f47a5465-b279-3170-286e-cce44ed66ee1
+		summarizeBy: none
+		sourceColumn: is_named_bank
+
+		annotation SummarizationSetBy = Automatic
+
+	column original_exposure
+		dataType: double
+		formatString: #,0.00
+		lineageTag: feac365d-6bb7-f523-9749-a1a8b5ff9894
+		summarizeBy: sum
+		sourceColumn: original_exposure
+
+		annotation SummarizationSetBy = Automatic
+
+	column exposure_value
+		dataType: double
+		formatString: #,0.00
+		lineageTag: 6829c31d-71e8-fb15-2a6e-5ea65a55e046
+		summarizeBy: sum
+		sourceColumn: exposure_value
+
+		annotation SummarizationSetBy = Automatic
+
+	column risk_exposure_amount
+		dataType: double
+		formatString: #,0.00
+		lineageTag: 1890ac27-83a8-d592-dfad-7d0ff0695ce6
+		summarizeBy: sum
+		sourceColumn: risk_exposure_amount
+
+		annotation SummarizationSetBy = Automatic
+
+	partition bank_exposure = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("__DATA_FOLDER__bank_exposure.csv"), [Delimiter = ",", Columns = 6, Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {{"lei_code", type text}, {"country_code", type text}, {"is_named_bank", type logical}, {"original_exposure", type number}, {"exposure_value", type number}, {"risk_exposure_amount", type number}}, "en-US")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

@@ -1,0 +1,1167 @@
+<!doctype html>
+<html lang="en">
+<!-- EBA Credit Risk Analytics web page: one self-contained file (styles and script inline). Data: details/data/web_data.json and details/data/eba.duckdb, built by details/build_web_data.py. After editing the inline style or script, run  python details/build_web_data.py --csp  to update the Content-Security-Policy hashes. -->
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-uHL4F7UxNgyVpmrUiupSiTJ8TW/XWNPRtjbVlpLTEsM=' https://cdn.jsdelivr.net 'wasm-unsafe-eval' blob:; worker-src 'self' blob:; connect-src 'self' https://cdn.jsdelivr.net; style-src 'sha256-ygNCuzqWseuMpIPXaokgHUjo4F4RdrYBd6rnKIYBCgk='; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>EBA Credit Risk Analytics</title>
+<meta name="description" content="Credit risk in the EU banking system from the EBA 2025 Transparency Exercise: exposure, asset quality, the 40 SQL queries run live in the browser, and an NPE stress test against each bank's CET1 requirement.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='8' width='3' height='6' rx='1' fill='%232a78d6'/%3E%3Crect x='6.5' y='4' width='3' height='10' rx='1' fill='%232a78d6'/%3E%3Crect x='11' y='2' width='3' height='12' rx='1' fill='%232a78d6'/%3E%3C/svg%3E">
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-2: #f0efec;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.10);
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --today: #b7b6ad;
+  --critical: #d03b3b;
+  --critical-ink: #b42318;
+  --good-ink: #006300;
+  --accent: #2a78d6;
+  --code-bg: #f3f2ee;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #262624;
+    --ink: #f0efec;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --today: #5f5e59;
+    --critical: #d03b3b;
+    --critical-ink: #e66767;
+    --good-ink: #0ca30c;
+    --accent: #5598e7;
+    --code-bg: #141413;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #262624;
+  --ink: #f0efec;
+  --ink-2: #c3c2b7;
+  --muted: #898781;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.10);
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --today: #5f5e59;
+  --critical: #d03b3b;
+  --critical-ink: #e66767;
+  --good-ink: #0ca30c;
+  --accent: #5598e7;
+  --code-bg: #141413;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font: 15px/1.55 var(--font);
+}
+a { color: var(--accent); }
+h1 { font-size: clamp(1.35rem, 2.6vw, 1.85rem); line-height: 1.25; margin: 0.25rem 0 1.25rem; font-weight: 650; letter-spacing: -0.01em; max-width: 60ch; }
+h2 { font-size: 1rem; margin: 0; font-weight: 600; }
+code { font-family: var(--mono); font-size: 0.9em; }
+.wrap { max-width: 1160px; margin: 0 auto; padding: 0 16px; }
+.visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* header */
+.site-header { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+.header-row { display: flex; align-items: center; gap: 16px; min-height: 56px; flex-wrap: wrap; }
+.brand { font-weight: 650; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.tabs { display: flex; gap: 4px; flex: 1; overflow-x: auto; }
+.tabs a { padding: 8px 12px; border-radius: 8px; color: var(--ink-2); text-decoration: none; white-space: nowrap; font-weight: 500; }
+.tabs a:hover { background: var(--surface-2); color: var(--ink); }
+.tabs a[aria-current="page"] { background: var(--surface-2); color: var(--ink); box-shadow: inset 0 -2px 0 var(--accent); }
+.header-tools { display: flex; align-items: center; gap: 8px; }
+.repo-link { color: var(--ink-2); text-decoration: none; font-size: 0.9rem; }
+.repo-link:hover { color: var(--ink); text-decoration: underline; }
+.theme-toggle { background: none; border: 1px solid var(--border); color: var(--ink-2); border-radius: 8px; width: 34px; height: 34px; cursor: pointer; font-size: 1rem; }
+@media (max-width: 640px) {
+  .header-row { gap: 4px 12px; padding-top: 8px; }
+  .tabs { order: 3; flex-basis: 100%; padding-bottom: 6px; }
+  .header-tools { margin-left: auto; }
+}
+
+main { padding: 28px 0 48px; }
+.eyebrow { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; margin: 0; font-weight: 600; }
+.lede { color: var(--ink-2); max-width: 75ch; margin: -0.5rem 0 1.25rem; }
+.footnote { color: var(--muted); font-size: 0.82rem; max-width: 90ch; margin-top: 24px; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin: 0 0 16px; min-width: 0; }
+figure.card { margin: 0 0 16px; }
+figcaption { margin-bottom: 10px; }
+.sub { color: var(--ink-2); font-size: 0.85rem; margin: 2px 0 0; }
+.grid-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 860px) { .grid-2 { grid-template-columns: minmax(0, 1fr); } }
+
+/* stat tiles */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+.tile .label { color: var(--ink-2); font-size: 0.82rem; }
+.tile .value { font-size: 1.7rem; font-weight: 650; line-height: 1.2; margin-top: 4px; }
+.tile .note { color: var(--muted); font-size: 0.78rem; margin-top: 2px; }
+.tile .value .from { color: var(--muted); font-weight: 500; font-size: 1.1rem; }
+.tile.alert .value { color: var(--critical-ink); }
+
+.callout h2 { font-size: 1.05rem; margin-bottom: 6px; }
+.callout p { margin: 0.4rem 0; color: var(--ink-2); max-width: 85ch; }
+.callout .btn { margin-top: 8px; }
+
+/* charts */
+.chart { width: 100%; position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { fill: var(--ink-2); font-family: var(--font); font-size: 12px; }
+.chart .axis-label, .chart .tick text { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.chart .gridline { stroke: var(--grid); stroke-width: 1; }
+.chart .baseline { stroke: var(--axis); stroke-width: 1; }
+.chart .value-label { fill: var(--ink); font-size: 12px; font-variant-numeric: tabular-nums; }
+.chart .hit { fill: transparent; cursor: default; }
+.chart .row-hover { fill: var(--surface-2); opacity: 0; }
+.chart g.row:hover .row-hover, .chart g.row:focus .row-hover { opacity: 1; }
+.chart g.row:focus { outline: none; }
+.chart .section-label { fill: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.chart .zero-label { fill: var(--ink-2); font-size: 11px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.82rem; color: var(--ink-2); margin: 0 0 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.legend i.sw-today { background: var(--today); }
+.legend i.sw-after { background: var(--series-1); }
+.legend i.sw-below { background: var(--critical); }
+.chart .neg-label { fill: var(--critical-ink); font-weight: 600; }
+.legend i.line { width: 16px; height: 2px; border-radius: 1px; }
+
+.tooltip { position: fixed; z-index: 50; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); border-radius: 8px; padding: 8px 10px; font-size: 0.8rem; max-width: 280px; }
+.tooltip strong { display: block; margin-bottom: 2px; }
+.tooltip .tt-row { display: flex; justify-content: space-between; gap: 14px; font-variant-numeric: tabular-nums; }
+.tooltip .tt-row span:first-child { color: var(--ink-2); }
+
+/* buttons, inputs */
+.btn { font: inherit; font-size: 0.88rem; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--ink); cursor: pointer; text-decoration: none; display: inline-block; }
+.btn:hover:not(:disabled) { border-color: var(--axis); }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
+.btn.primary:hover:not(:disabled) { filter: brightness(1.08); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input[type="search"] { width: 100%; font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--ink); }
+
+/* ask */
+.ask-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .ask-layout { grid-template-columns: minmax(0, 1fr); } }
+.q-list { position: sticky; top: 72px; max-height: calc(100vh - 90px); overflow-y: auto; padding-right: 4px; }
+@media (max-width: 860px) { .q-list { position: static; max-height: 300px; border: 1px solid var(--border); border-radius: 12px; padding: 10px; background: var(--surface); } }
+.q-group h3 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 14px 0 4px; }
+.q-item { display: block; width: 100%; text-align: left; font: inherit; font-size: 0.85rem; line-height: 1.35; background: none; border: 0; border-radius: 6px; padding: 6px 8px; color: var(--ink-2); cursor: pointer; }
+.q-item b { color: var(--ink); font-weight: 600; margin-right: 4px; }
+.q-item:hover { background: var(--surface-2); }
+.q-item[aria-current="true"] { background: var(--surface-2); box-shadow: inset 2px 0 0 var(--accent); color: var(--ink); }
+.q-detail h2 { font-size: 1.15rem; margin: 4px 0 8px; line-height: 1.35; }
+.notes .result-label { color: var(--ink); font-weight: 600; margin-top: 10px; }
+.notes pre.result-text { font-family: var(--mono); font-size: 0.8rem; line-height: 1.5; white-space: pre-wrap; background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin: 0 0 8px; color: var(--ink-2); }
+.notes p { overflow-wrap: anywhere; color: var(--ink-2); font-size: 0.86rem; margin: 0 0 6px; max-width: 95ch; }
+textarea#q-sql { width: 100%; font-family: var(--mono); font-size: 0.82rem; line-height: 1.5; background: var(--code-bg); color: var(--ink); border: 1px solid var(--border); border-radius: 8px; padding: 12px; resize: vertical; tab-size: 4; margin-top: 8px; }
+.run-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0; }
+.status { color: var(--ink-2); font-size: 0.84rem; }
+.status.error { color: var(--critical-ink); }
+.result { min-height: 20px; }
+.result pre.error { white-space: pre-wrap; color: var(--critical-ink); background: var(--code-bg); padding: 10px; border-radius: 8px; font-size: 0.82rem; }
+.schema { margin-top: 14px; font-size: 0.85rem; color: var(--ink-2); }
+.schema summary { cursor: pointer; color: var(--ink); }
+.schema li { margin: 4px 0; }
+
+/* tables */
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; max-height: 520px; overflow-y: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
+th, td { padding: 6px 10px; border-bottom: 1px solid var(--grid); text-align: left; white-space: nowrap; }
+th { white-space: normal; vertical-align: bottom; position: sticky; top: 0; background: var(--surface-2); font-weight: 600; color: var(--ink); z-index: 1; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+tr:last-child td { border-bottom: 0; }
+td.null { color: var(--muted); font-style: italic; }
+td.neg { color: var(--critical-ink); font-weight: 600; }
+tr.group td { background: var(--surface); color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+
+/* stress controls */
+.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px 24px; align-items: start; }
+.control-label { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--ink-2); margin-bottom: 6px; font-weight: 500; }
+.control-label output { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 600; }
+.seg { display: flex; flex-wrap: wrap; gap: 4px; }
+.seg button { font: inherit; font-size: 0.82rem; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--ink-2); cursor: pointer; }
+.seg button[aria-checked="true"] { background: var(--accent); border-color: transparent; color: #fff; }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+.control-note { grid-column: 1 / -1; margin: 0; font-size: 0.8rem; color: var(--muted); }
+.control.disabled { opacity: 0.45; }
+
+@media print {
+  .site-header, .controls, .run-row, .q-list { display: none; }
+  .tab-panel[hidden] { display: block !important; }
+}
+@media (forced-colors: active) {
+  .chart rect, .chart circle { forced-color-adjust: none; }
+}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap header-row">
+    <a class="brand" href="#overview">EBA Credit Risk Analytics</a>
+    <nav class="tabs" aria-label="Sections">
+      <a href="#overview" data-tab="overview">Overview</a>
+      <a href="#ask" data-tab="ask">Ask the data</a>
+      <a href="#stress" data-tab="stress">Stress test</a>
+      <a href="blog/how-this-analysis-works.html">How it works</a>
+    </nav>
+    <div class="header-tools">
+      <a class="repo-link" href="https://github.com/agrawallachanchal/eba-credit-risk-analytics">Repository</a>
+      <button class="theme-toggle" type="button" aria-label="Switch colour theme" title="Switch colour theme">◐</button>
+    </div>
+  </div>
+</header>
+
+<main>
+<!-- OVERVIEW -->
+<section id="tab-overview" class="tab-panel" aria-labelledby="h-overview">
+  <div class="wrap">
+    <p class="eyebrow">EBA EU-wide Transparency Exercise 2025 · 30 June 2025</p>
+    <h1 id="h-overview">Where does credit risk sit in the EU banking system, and could large banks absorb the ECB's 2025 adverse NPE shock with the capital they hold today?</h1>
+    <div class="tiles" id="ov-tiles"></div>
+
+    <div class="grid-2">
+      <figure class="card">
+        <figcaption><h2>Exposure by bank home country</h2><p class="sub">Share of original exposure, top 10 countries. Q12.</p></figcaption>
+        <div class="chart" id="ch-country"></div>
+      </figure>
+      <figure class="card">
+        <figcaption><h2>NPE ratio, system</h2><p class="sub">Non-performing ÷ gross loans, banks reporting item 2520603. Q31.</p></figcaption>
+        <div class="chart" id="ch-trend"></div>
+      </figure>
+    </div>
+
+    <figure class="card">
+      <figcaption><h2>Sectors: size and risk</h2><p class="sub">Gross carrying amount (Perf_Status 0) by NACE sector: share of the classified total, and non-performing rate. Q16, Q22b.</p></figcaption>
+      <div class="chart" id="ch-sector"></div>
+    </figure>
+
+    <div class="card callout" id="ov-stress"></div>
+
+    <p class="footnote">Source: European Banking Authority, EU-wide Transparency Exercise 2025, reproduced with acknowledgement. Scenario: ECB, 2025 stress test of euro area banks, final results. Educational analysis of public data, not investment advice. Method, assumptions and limitations are documented in the <a href="https://github.com/agrawallachanchal/eba-credit-risk-analytics/blob/main/details/METHODOLOGY.md">repository</a>.</p>
+  </div>
+</section>
+
+<!-- ASK THE DATA -->
+<section id="tab-ask" class="tab-panel" aria-labelledby="h-ask" hidden>
+  <div class="wrap">
+    <h1 id="h-ask">Ask the data</h1>
+    <p class="lede">The 40 analytical queries from the repository, run in your browser on an extract of the EBA data with DuckDB. Pick a question, read the SQL, run it, or edit it and ask your own.</p>
+    <div class="ask-layout">
+      <aside class="q-list" aria-label="Questions">
+        <label class="visually-hidden" for="q-filter">Filter questions</label>
+        <input id="q-filter" type="search" placeholder="Filter questions">
+        <div id="q-groups"></div>
+      </aside>
+      <div class="q-detail card">
+        <p class="eyebrow" id="q-meta"></p>
+        <h2 id="q-title">Select a question</h2>
+        <div id="q-notes" class="notes"></div>
+        <label class="visually-hidden" for="q-sql">SQL</label>
+        <textarea id="q-sql" spellcheck="false" rows="14" wrap="off"></textarea>
+        <div class="run-row">
+          <button id="q-run" class="btn primary" type="button">Run query</button>
+          <button id="q-reset" class="btn" type="button">Reset SQL</button>
+          <button id="q-download" class="btn" type="button" disabled>Download CSV</button>
+          <span id="q-status" class="status" role="status" aria-live="polite"></span>
+        </div>
+        <div id="q-result" class="result"></div>
+        <details class="schema">
+          <summary>Tables available</summary>
+          <ul>
+            <li><code>credit</code>: tr_cre.csv rows for items 2520502, 2520522, 2520532 (exposure), 2521301–2521303 (sector), 2520603, 2520613 (NPE template), all four periods</li>
+            <li><code>oth</code>: tr_oth.csv rows for capital, RWA, total assets and profit items</li>
+            <li><code>bank_metadata</code> (also <code>metadata</code>), <code>nace_metadata</code>, <code>prefstatus_metadata</code></li>
+          </ul>
+          <p>The extract holds the items the queries use, not the full 123 MB file, so Q3 lists only these items. Every other query returns the same result as on the full PostgreSQL database.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STRESS TEST -->
+<section id="tab-stress" class="tab-panel" aria-labelledby="h-stress" hidden>
+  <div class="wrap">
+    <h1 id="h-stress">Stress test: headroom to each bank's CET1 requirement</h1>
+    <p class="lede">An NPE shock from the ECB 2025 stress test is applied to each bank's gross loans. New NPE are provisioned at the bank's current coverage and charged against June 2025 CET1, with risk-weighted assets held constant. Headroom is the stressed CET1 ratio minus the bank's own published CET1 requirement (the level below which distribution restrictions apply).</p>
+
+    <div class="controls card">
+      <div class="control">
+        <span class="control-label" id="lbl-scn">Scenario</span>
+        <div class="seg" role="radiogroup" aria-labelledby="lbl-scn" id="scn-buttons"></div>
+      </div>
+      <div class="control">
+        <span class="control-label" id="lbl-view">View</span>
+        <div class="seg" role="radiogroup" aria-labelledby="lbl-view" id="view-buttons"></div>
+      </div>
+      <div class="control">
+        <label class="control-label" for="sl-shock">NPE shock <output id="out-shock"></output></label>
+        <input type="range" id="sl-shock" min="0" max="8" step="0.1">
+      </div>
+      <div class="control">
+        <label class="control-label" for="sl-cov">Coverage of new NPE <output id="out-cov"></output></label>
+        <input type="range" id="sl-cov" min="50" max="150" step="5" value="100">
+      </div>
+      <div class="control" id="ctl-horizon">
+        <label class="control-label" for="sl-hor">Earnings horizon <output id="out-hor"></output></label>
+        <input type="range" id="sl-hor" min="1" max="3" step="1">
+      </div>
+      <p class="control-note" id="ctl-note"></p>
+    </div>
+
+    <div class="tiles" id="st-tiles"></div>
+
+    <figure class="card">
+      <figcaption><h2>CET1 headroom before and after the shock</h2><p class="sub">Percentage points of RWA above (right of zero) or below (left) each bank's CET1 requirement. Ten core banks; Revolut shown separately as a reference case.</p></figcaption>
+      <div class="legend" id="st-legend"></div>
+      <div class="chart" id="ch-headroom"></div>
+    </figure>
+
+    <figure class="card">
+      <figcaption><h2>Bank detail</h2><p class="sub">EUR bn and % of RWA.</p></figcaption>
+      <div class="table-wrap" id="st-table"></div>
+    </figure>
+
+    <p class="footnote" id="st-foot">Shocks read from ECB Chart 3.7 (2025 stress test final results, p. 27): 1-year baseline +0.8 pp, 1-year adverse +1.2 pp, 3-year baseline +2.4 pp, 3-year adverse +4.1 pp (5.8% at end-2027 from 1.7%, p. 26). With earnings: annualised H1 2025 profit before tax over the horizon, 30% tax on positive results, 30% payout in profit years and none in loss years (EBA 2025 methodological note). Revenues are not stressed, so that view is optimistic. At the default settings the figures equal <a href="https://github.com/agrawallachanchal/eba-credit-risk-analytics/blob/main/EBA_stress_test_model.xlsx">the Excel model</a>.</p>
+  </div>
+</section>
+</main>
+
+<div class="tooltip" id="tooltip" role="tooltip" hidden></div>
+<script type="module">
+// ---- charts ----
+// Small SVG chart helpers (no library). Marks follow one style: bars at most 24px thick with a
+// 4px rounded data end, 2px lines, 8px markers, hairline grid, labels in text colours.
+
+const NS = 'http://www.w3.org/2000/svg';
+
+function el(tag, attrs = {}, parent) {
+  const n = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) if (v !== undefined && v !== null) n.setAttribute(k, v);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+
+function text(parent, x, y, str, attrs = {}) {
+  const t = el('text', { x, y, ...attrs }, parent);
+  t.textContent = str;
+  return t;
+}
+
+const pct = (v, d = 1) => `${(v * 100).toFixed(d)}%`;
+const pp = (v, d = 2) => `${v < 0 ? '−' : ''}${Math.abs(v * 100).toFixed(d)} pp`;
+
+// Horizontal bar whose data end (right for positive, left for negative) is rounded
+function hbarPath(x0, x1, y, h, r = 4) {
+  const left = Math.min(x0, x1), right = Math.max(x0, x1), w = right - left;
+  const rr = Math.min(r, w / 2, h / 2);
+  if (x1 >= x0) {
+    return `M${left},${y}H${right - rr}Q${right},${y} ${right},${y + rr}V${y + h - rr}Q${right},${y + h} ${right - rr},${y + h}H${left}Z`;
+  }
+  return `M${right},${y}H${left + rr}Q${left},${y} ${left},${y + rr}V${y + h - rr}Q${left},${y + h} ${left + rr},${y + h}H${right}Z`;
+}
+
+// Shorten a label to fit a width (approximate glyph width for 12px system sans)
+function fit(str, px) {
+  const max = Math.max(4, Math.floor(px / 6.3));
+  return str.length > max ? str.slice(0, max - 1).trimEnd() + '…' : str;
+}
+
+// Decimals for a percentage tick: none for whole percentages, one otherwise
+const tickDp = t => (Math.abs(t * 100 - Math.round(t * 100)) < 1e-9 ? 0 : 1);
+
+function niceTicks(min, max, count = 5) {
+  const span = max - min || 1;
+  const step0 = span / count;
+  const mag = 10 ** Math.floor(Math.log10(step0));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => span / s <= count) || 10 * mag;
+  const ticks = [];
+  const end = Math.ceil(max / step - 1e-9) * step;
+  for (let v = Math.floor(min / step + 1e-9) * step; v <= end + step * 1e-6; v += step) ticks.push(+v.toFixed(12));
+  return ticks;
+}
+
+// ---------- tooltip ----------
+const tip = () => document.getElementById('tooltip');
+function showTip(evt, title, rows) {
+  const t = tip();
+  t.innerHTML = '';
+  const s = document.createElement('strong'); s.textContent = title; t.appendChild(s);
+  for (const [k, v] of rows) {
+    const r = document.createElement('div'); r.className = 'tt-row';
+    const a = document.createElement('span'); a.textContent = k;
+    const b = document.createElement('span'); b.textContent = v;
+    r.append(a, b); t.appendChild(r);
+  }
+  t.hidden = false;
+  moveTip(evt);
+}
+function moveTip(evt) {
+  const t = tip();
+  let x, y;
+  if (evt.clientX !== undefined && evt.type !== 'focus') { x = evt.clientX; y = evt.clientY; }
+  else { const b = evt.target.getBoundingClientRect(); x = b.left + b.width / 2; y = b.top; }
+  const w = t.offsetWidth, h = t.offsetHeight;
+  let left = x + 14, top = y - h - 10;
+  if (left + w > window.innerWidth - 8) left = x - w - 14;
+  if (left < 8) left = 8;
+  if (top < 8) top = y + 16;
+  t.style.left = `${left}px`; t.style.top = `${top}px`;
+}
+function hideTip() { tip().hidden = true; }
+
+function bindTip(node, title, rows) {
+  node.setAttribute('tabindex', '0');
+  node.addEventListener('mouseenter', e => showTip(e, title, rows()));
+  node.addEventListener('mousemove', moveTip);
+  node.addEventListener('mouseleave', hideTip);
+  node.addEventListener('focus', e => showTip(e, title, rows()));
+  node.addEventListener('blur', hideTip);
+}
+
+// ---------- horizontal bar chart (one series) ----------
+function barChart(container, data, { format = pct, labelWidth = 120, tipRows } = {}) {
+  container.innerHTML = '';
+  const W = Math.max(container.clientWidth, 280);
+  const rowH = 30, barH = 18, top = 4, bottom = 22;
+  const lw = Math.min(labelWidth, W * 0.38);
+  const valueW = 52;
+  const H = top + data.length * rowH + bottom;
+  const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': data.map(d => `${d.name} ${format(d.value)}`).join('; ') }, container);
+  const max = Math.max(...data.map(d => d.value));
+  const x0 = lw, x1 = W - valueW;
+  const ticks = niceTicks(0, max, 4);
+  const sx = v => x0 + (v / ticks[ticks.length - 1]) * (x1 - x0);
+  for (const t of ticks) {
+    el('line', { x1: sx(t), x2: sx(t), y1: top, y2: H - bottom, class: t === 0 ? 'baseline' : 'gridline' }, svg);
+    const g = el('g', { class: 'tick' }, svg);
+    text(g, sx(t), H - 6, format(t, tickDp(t)), { 'text-anchor': 'middle' });
+  }
+  data.forEach((d, i) => {
+    const y = top + i * rowH;
+    const g = el('g', { class: 'row' }, svg);
+    el('rect', { x: 0, y, width: W, height: rowH, class: 'row-hover', rx: 4 }, g);
+    text(g, lw - 8, y + rowH / 2 + 4, fit(d.name, lw - 12), { 'text-anchor': 'end' });
+    el('path', { d: hbarPath(sx(0), sx(d.value), y + (rowH - barH) / 2, barH), fill: 'var(--series-1)' }, g);
+    text(g, sx(d.value) + 6, y + rowH / 2 + 4, format(d.value), { class: 'value-label' });
+    bindTip(g, d.name, () => (tipRows ? tipRows(d) : [['Value', format(d.value)]]));
+  });
+}
+
+// ---------- two aligned bar panels sharing rows (no dual axis: each panel has its own scale) ----------
+function pairedBars(container, data, panels, { labelWidth = 290 } = {}) {
+  container.innerHTML = '';
+  const W = Math.max(container.clientWidth, 300);
+  const narrow = W < 620;
+  const rowH = 28, barH = 16, top = 26, bottom = 22;
+  const lw = narrow ? Math.min(150, W * 0.42) : labelWidth;
+  const gap = 24, valueW = 48;
+  const panelW = (W - lw - gap * (panels.length - 1) - 8) / panels.length;
+  const H = top + data.length * rowH + bottom;
+  const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': panels.map(p => p.title).join(' and ') + ' by sector' }, container);
+  const scales = panels.map((p, k) => {
+    const max = Math.max(...data.map(p.value));
+    const ticks = niceTicks(0, max, narrow ? 2 : 3);
+    const a = lw + k * (panelW + gap), b = a + panelW - valueW;
+    return { ...p, ticks, a, b, s: v => a + (v / ticks[ticks.length - 1]) * (b - a) };
+  });
+  for (const p of scales) {
+    text(svg, p.a, 14, p.title, { class: 'section-label' });
+    for (const t of p.ticks) {
+      el('line', { x1: p.s(t), x2: p.s(t), y1: top, y2: H - bottom, class: t === 0 ? 'baseline' : 'gridline' }, svg);
+      const g = el('g', { class: 'tick' }, svg);
+      text(g, p.s(t), H - 6, p.format(t, tickDp(t)), { 'text-anchor': 'middle' });
+    }
+  }
+  data.forEach((d, i) => {
+    const y = top + i * rowH;
+    const g = el('g', { class: 'row' }, svg);
+    el('rect', { x: 0, y, width: W, height: rowH, class: 'row-hover', rx: 4 }, g);
+    text(g, lw - 8, y + rowH / 2 + 4, fit(d.name, lw - 12), { 'text-anchor': 'end' });
+    for (const p of scales) {
+      const v = p.value(d);
+      el('path', { d: hbarPath(p.s(0), p.s(v), y + (rowH - barH) / 2, barH), fill: p.color(d) }, g);
+      text(g, p.s(v) + 5, y + rowH / 2 + 4, p.format(v), { class: 'value-label' });
+    }
+    bindTip(g, d.name, () => scales.map(p => [p.title, p.format(p.value(d))]));
+  });
+}
+
+// ---------- line chart (one series, a handful of points) ----------
+function lineChart(container, data, { format = v => pct(v, 2), yMin, yMax } = {}) {
+  container.innerHTML = '';
+  const W = Math.max(container.clientWidth, 280);
+  const H = 240, left = 52, right = 56, top = 16, bottom = 30;
+  const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': data.map(d => `${d.label} ${format(d.value)}`).join('; ') }, container);
+  const vals = data.map(d => d.value);
+  const lo = yMin ?? Math.min(...vals), hi = yMax ?? Math.max(...vals);
+  const ticks = niceTicks(lo, hi, 4);
+  const t0 = Math.min(ticks[0], lo), t1 = Math.max(ticks[ticks.length - 1], hi);
+  const sy = v => top + (1 - (v - t0) / (t1 - t0)) * (H - top - bottom);
+  const sx = i => left + (data.length === 1 ? 0.5 : i / (data.length - 1)) * (W - left - right);
+  for (const t of ticks) {
+    el('line', { x1: left, x2: W - right, y1: sy(t), y2: sy(t), class: 'gridline' }, svg);
+    const g = el('g', { class: 'tick' }, svg);
+    text(g, left - 8, sy(t) + 4, format(t), { 'text-anchor': 'end' });
+  }
+  data.forEach((d, i) => { const g = el('g', { class: 'tick' }, svg); text(g, sx(i), H - 8, d.label, { 'text-anchor': 'middle' }); });
+  el('path', { d: data.map((d, i) => `${i ? 'L' : 'M'}${sx(i)},${sy(d.value)}`).join(''), fill: 'none', stroke: 'var(--series-1)', 'stroke-width': 2, 'stroke-linejoin': 'round' }, svg);
+  data.forEach((d, i) => {
+    const g = el('g', { class: 'row' }, svg);
+    el('rect', { x: sx(i) - 24, y: top, width: 48, height: H - top - bottom, class: 'hit' }, g);
+    el('circle', { cx: sx(i), cy: sy(d.value), r: 4, fill: 'var(--series-1)', stroke: 'var(--surface)', 'stroke-width': 2 }, g);
+    if (i === 0 || i === data.length - 1) {
+      text(g, sx(i) + (i ? 8 : -8), sy(d.value) - 8, format(d.value), { class: 'value-label', 'text-anchor': i ? 'start' : 'end' });
+    }
+    bindTip(g, d.label, () => [['NPE ratio', format(d.value)]]);
+  });
+}
+
+// ---------- dumbbell: headroom today -> after shock, zero line = requirement ----------
+function dumbbell(container, groups, { tipRows } = {}) {
+  container.innerHTML = '';
+  const W = Math.max(container.clientWidth, 300);
+  const narrow = W < 560;
+  const rowH = 30, groupH = 26, top = 8, bottom = 26;
+  const lw = narrow ? 112 : 210;
+  const right = 16;
+  const rows = groups.reduce((n, g) => n + g.items.length, 0);
+  const H = top + rows * rowH + groups.length * groupH + bottom;
+  const all = groups.flatMap(g => g.items.flatMap(d => [d.before, d.after]));
+  const lo = Math.min(0, ...all), hi = Math.max(0, ...all);
+  const ticks = niceTicks(lo, hi, narrow ? 4 : 6);
+  const t0 = Math.min(ticks[0], lo), t1 = Math.max(ticks[ticks.length - 1], hi);
+  const sx = v => lw + ((v - t0) / (t1 - t0)) * (W - lw - right);
+  const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': groups.flatMap(g => g.items).map(d => `${d.name}: ${pp(d.before)} to ${pp(d.after)}`).join('; ') }, container);
+  for (const t of ticks) {
+    el('line', { x1: sx(t), x2: sx(t), y1: top, y2: H - bottom, class: Math.abs(t) < 1e-12 ? 'baseline' : 'gridline' }, svg);
+    const g = el('g', { class: 'tick' }, svg);
+    text(g, sx(t), H - 8, `${t < 0 ? '−' : t > 0 ? '+' : ''}${Math.abs(t * 100).toFixed(0)}`, { 'text-anchor': 'middle' });
+  }
+  el('line', { x1: sx(0), x2: sx(0), y1: top, y2: H - bottom, stroke: 'var(--ink-2)', 'stroke-width': 1.5 }, svg);
+  let y = top;
+  for (const grp of groups) {
+    text(svg, 0, y + 17, grp.title, { class: 'section-label' });
+    y += groupH;
+    for (const d of grp.items) {
+      const cy = y + rowH / 2;
+      const g = el('g', { class: 'row' }, svg);
+      el('rect', { x: 0, y, width: W, height: rowH, class: 'row-hover', rx: 4 }, g);
+      const name = fit(narrow && d.short ? d.short : d.name, lw - 14);
+      text(g, lw - 10, cy + 4, name, { 'text-anchor': 'end' });
+      const below = d.after < 0;
+      el('line', { x1: sx(d.before), x2: sx(d.after), y1: cy, y2: cy, stroke: below ? 'var(--critical)' : 'var(--series-1)', 'stroke-width': 2, 'stroke-opacity': 0.55 }, g);
+      el('circle', { cx: sx(d.before), cy, r: 5, fill: 'var(--today)', stroke: 'var(--surface)', 'stroke-width': 2 }, g);
+      el('circle', { cx: sx(d.after), cy, r: 5.5, fill: below ? 'var(--critical)' : 'var(--series-1)', stroke: 'var(--surface)', 'stroke-width': 2 }, g);
+      if (below) {
+        const label = `▼ ${pp(d.after)}`;
+        const roomLeft = sx(d.after) - lw > 78;
+        const lx = roomLeft ? sx(d.after) - 10 : Math.max(sx(d.after), sx(d.before)) + 10;
+        text(g, lx, cy + 4, label, { 'text-anchor': roomLeft ? 'end' : 'start', class: 'value-label neg-label' });
+      }
+      bindTip(g, d.name, () => (tipRows ? tipRows(d) : []));
+      y += rowH;
+    }
+  }
+  text(svg, sx(0) + 4, top + 10, 'requirement', { class: 'zero-label' });
+}
+
+// ---- stress-model ----
+// Stress model, same arithmetic as EBA_stress_test_model.xlsx (sheet Stress).
+// Headline (instant loss): CET1 minus provisions on new NPE, RWA constant.
+// With earnings: run-rate profit before tax over the horizon, 30% tax on positive results only,
+// 30% payout in profit years and none in loss years (EBA 2025 methodology, para. 32 and Table 1).
+
+function stressBank(bank, shock, horizon, a) {
+  const newNpe = shock * bank.gross_loans;
+  const provisions = newNpe * bank.npe_coverage;
+  const cet1Today = bank.cet1_capital / bank.rwa;
+  const headroomToday = cet1Today - bank.cet1_requirement;
+
+  const stressedInstant = (bank.cet1_capital - provisions) / bank.rwa;
+
+  const earnings = bank.pbt_h1 * a.annualisation * horizon;
+  const preTax = earnings - provisions;
+  const tax = Math.max(preTax, 0) * a.tax_rate;
+  const net = preTax - tax;
+  const distributions = net > 0 ? net * a.payout_profit : 0; // payout ratio in loss years is 0
+  const stressedEarnings = (bank.cet1_capital + net - distributions) / bank.rwa;
+
+  return {
+    newNpe, provisions, cet1Today, headroomToday,
+    instant: { ratio: stressedInstant, headroom: stressedInstant - bank.cet1_requirement },
+    earnings: { ratio: stressedEarnings, headroom: stressedEarnings - bank.cet1_requirement, net, distributions },
+  };
+}
+
+function median(xs) {
+  const s = [...xs].sort((p, q) => p - q);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+
+// ---- ask ----
+// DuckDB-WASM, pinned version, loaded from jsDelivr only when this section is opened
+const DUCKDB_VERSION = '1.32.0';
+const DUCKDB_URL = `https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@${DUCKDB_VERSION}/+esm`;
+const MAX_ROWS_SHOWN = 1000;
+
+let conn = null;
+let enginePromise = null;
+let queries = [];
+let current = null;
+let lastResult = null;
+
+const $ = id => document.getElementById(id);
+
+function setStatus(msg, isError = false) {
+  const s = $('q-status');
+  s.textContent = msg;
+  s.classList.toggle('error', isError);
+}
+
+async function startEngine() {
+  const duckdb = await import(DUCKDB_URL);
+  const bundle = await duckdb.selectBundle(duckdb.getJsDelivrBundles());
+  const workerUrl = URL.createObjectURL(new Blob([`importScripts("${bundle.mainWorker}");`], { type: 'text/javascript' }));
+  const worker = new Worker(workerUrl);
+  const db = new duckdb.AsyncDuckDB(new duckdb.VoidLogger(), worker);
+  await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
+  URL.revokeObjectURL(workerUrl);
+  await db.open({ query: { castBigIntToDouble: true, castDecimalToDouble: true } });
+  // The extract is a DuckDB database file (built by build_web_data.py); it needs no extensions
+  const r = await fetch('details/data/eba.duckdb');
+  if (!r.ok) throw new Error(`details/data/eba.duckdb: HTTP ${r.status}`);
+  await db.registerFileBuffer('eba.duckdb', new Uint8Array(await r.arrayBuffer()));
+  const c = await db.connect();
+  await c.query("ATTACH 'eba.duckdb' AS eba (READ_ONLY)");
+  await c.query('USE eba');
+  return c;
+}
+
+function engine() {
+  if (!enginePromise) {
+    setStatus('Loading the query engine and data (about 5 MB, first time only)…');
+    enginePromise = startEngine().then(c => { conn = c; setStatus('Ready.'); return c; })
+      .catch(err => { enginePromise = null; throw err; });
+  }
+  return enginePromise;
+}
+
+function formatValue(v) {
+  if (v === null || v === undefined) return { text: 'NULL', cls: 'null' };
+  if (typeof v === 'bigint') v = Number(v);
+  if (typeof v === 'number') {
+    if (!Number.isFinite(v)) return { text: String(v), cls: 'num' };
+    if (Number.isInteger(v)) return { text: String(v), cls: 'num' };
+    const abs = Math.abs(v);
+    const text = abs >= 1000
+      ? v.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : v.toLocaleString('en-GB', { maximumFractionDigits: 6 });
+    return { text, cls: 'num' };
+  }
+  if (v instanceof Date) return { text: v.toISOString().slice(0, 10), cls: '' };
+  return { text: String(v), cls: '' };
+}
+
+function toRows(table) {
+  const names = table.schema.fields.map(f => f.name);
+  const cols = names.map((_, i) => table.getChildAt(i));
+  const rows = [];
+  for (let r = 0; r < table.numRows; r++) rows.push(cols.map(c => c.get(r)));
+  return { names, rows };
+}
+
+function renderResult({ names, rows }, ms) {
+  const box = $('q-result');
+  box.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'table-wrap';
+  const t = document.createElement('table');
+  const head = t.createTHead().insertRow();
+  const firstRow = rows[0] || [];
+  names.forEach((n, i) => {
+    const th = document.createElement('th');
+    th.textContent = n;
+    if (typeof firstRow[i] === 'number' || typeof firstRow[i] === 'bigint') th.className = 'num';
+    head.appendChild(th);
+  });
+  const body = t.createTBody();
+  for (const row of rows.slice(0, MAX_ROWS_SHOWN)) {
+    const tr = body.insertRow();
+    for (const v of row) {
+      const { text, cls } = formatValue(v);
+      const td = tr.insertCell();
+      td.textContent = text;
+      if (cls) td.className = cls;
+    }
+  }
+  wrap.appendChild(t);
+  box.appendChild(wrap);
+  const shown = Math.min(rows.length, MAX_ROWS_SHOWN);
+  setStatus(`${rows.length.toLocaleString('en-GB')} row${rows.length === 1 ? '' : 's'}${rows.length > shown ? ` (first ${shown} shown; the CSV has all)` : ''} · ${ms.toFixed(0)} ms`);
+}
+
+function csvEscape(v) {
+  if (v === null || v === undefined) return '';
+  const s = typeof v === 'bigint' ? v.toString() : String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function download() {
+  if (!lastResult) return;
+  const lines = [lastResult.names.map(csvEscape).join(',')]
+    .concat(lastResult.rows.map(r => r.map(csvEscape).join(',')));
+  const blob = new Blob([lines.join('\n') + '\n'], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${current ? current.id.toLowerCase() : 'query'}_result.csv`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+}
+
+async function run() {
+  const sql = $('q-sql').value.trim();
+  if (!sql) return;
+  const btn = $('q-run');
+  btn.disabled = true;
+  $('q-download').disabled = true;
+  lastResult = null;
+  try {
+    const c = await engine();
+    setStatus('Running…');
+    const t0 = performance.now();
+    const res = await c.query(sql);
+    lastResult = toRows(res);
+    renderResult(lastResult, performance.now() - t0);
+    $('q-download').disabled = false;
+  } catch (err) {
+    $('q-result').innerHTML = '';
+    const pre = document.createElement('pre');
+    pre.className = 'error';
+    pre.textContent = String(err.message || err);
+    $('q-result').appendChild(pre);
+    setStatus('Query failed.', true);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function select(q, { runIt = true, updateHash = true } = {}) {
+  current = q;
+  $('q-meta').textContent = `${q.id} · ${q.meta || ''}`.replace(/ · $/, '');
+  $('q-title').textContent = q.question;
+  const notes = $('q-notes');
+  notes.innerHTML = '';
+  const extra = q.id === 'Q3'
+    ? ['On this page: the browser extract holds only the items the queries use, so this query lists those items, not all 89.']
+    : [];
+  for (const n of [...q.notes, ...extra]) { const p = document.createElement('p'); p.textContent = n; notes.appendChild(p); }
+  if (q.result) {
+    const h = document.createElement('p'); h.className = 'result-label'; h.textContent = 'Result when run on the full data:'; notes.appendChild(h);
+    const pre = document.createElement('pre'); pre.className = 'result-text'; pre.textContent = q.result; notes.appendChild(pre);
+  }
+  const src = document.createElement('p');
+  const a = document.createElement('a');
+  a.href = `https://github.com/agrawallachanchal/eba-credit-risk-analytics/blob/main/details/eba_analysis.sql#L${q.line}`;
+  a.textContent = `details/eba_analysis.sql, line ${q.line}`;
+  src.append('Source: ', a);
+  notes.appendChild(src);
+  $('q-sql').value = q.sql;
+  $('q-result').innerHTML = '';
+  $('q-download').disabled = true;
+  for (const b of document.querySelectorAll('.q-item')) b.setAttribute('aria-current', String(b.dataset.id === q.id));
+  if (updateHash) history.replaceState(null, '', `#ask/${q.id}`);
+  if (runIt) run();
+}
+
+function buildList() {
+  const host = $('q-groups');
+  host.innerHTML = '';
+  for (const s of queries) {
+    const g = document.createElement('div');
+    g.className = 'q-group';
+    const h = document.createElement('h3');
+    h.textContent = s.section;
+    g.appendChild(h);
+    for (const q of s.queries) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'q-item';
+      b.dataset.id = q.id;
+      b.dataset.search = `${q.id} ${q.question}`.toLowerCase();
+      const strong = document.createElement('b');
+      strong.textContent = q.id;
+      b.append(strong, q.question);
+      b.addEventListener('click', () => select(q));
+      g.appendChild(b);
+    }
+    host.appendChild(g);
+  }
+  $('q-filter').addEventListener('input', e => {
+    const term = e.target.value.trim().toLowerCase();
+    for (const g of host.querySelectorAll('.q-group')) {
+      let any = false;
+      for (const b of g.querySelectorAll('.q-item')) {
+        const hit = !term || b.dataset.search.includes(term);
+        b.hidden = !hit;
+        any = any || hit;
+      }
+      g.hidden = !any;
+    }
+  });
+}
+
+function selectFromHash() {
+  const id = (location.hash.split('/')[1] || '').toUpperCase();
+  const all = queries.flatMap(s => s.queries);
+  const q = all.find(x => x.id.toUpperCase() === id);
+  if (q && q !== current) select(q, { updateHash: false });
+}
+
+async function initAsk() {
+  const data = await getJSON('queries');
+  queries = data;
+  buildList();
+  $('q-run').addEventListener('click', run);
+  $('q-reset').addEventListener('click', () => { if (current) $('q-sql').value = current.sql; });
+  $('q-download').addEventListener('click', download);
+  $('q-sql').addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); run(); }
+  });
+  const all = queries.flatMap(s => s.queries);
+  const id = (location.hash.split('/')[1] || '').toUpperCase();
+  select(all.find(x => x.id.toUpperCase() === id) || all.find(x => x.id === 'Q8') || all[0], { updateHash: false });
+}
+
+// ---- stress ----
+let S;            // web_data.json, key "stress"
+const state = { scenario: 'S4', view: 'instant', shock: null, coverage: 1, horizon: null };
+
+const SHORT = {
+  'Morgan Stanley Europe Holding SE': 'Morgan Stanley EU',
+  'HSBC Continental Europe': 'HSBC Cont. Europe',
+  'Groupe Crédit Agricole': 'Crédit Agricole',
+  'Revolut Holdings Europe': 'Revolut',
+};
+
+function segButtons(container, options, current, onPick) {
+  container.innerHTML = '';
+  for (const o of options) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-checked', String(o.value === current));
+    b.textContent = o.label;
+    b.addEventListener('click', () => onPick(o.value));
+    container.appendChild(b);
+  }
+  if (container.dataset.kb) return;
+  container.dataset.kb = '1';
+  container.addEventListener('keydown', e => {
+    if (!['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+    const btns = [...container.querySelectorAll('button')];
+    const i = btns.indexOf(document.activeElement);
+    if (i < 0) return;
+    const j = (i + (e.key === 'ArrowRight' ? 1 : -1) + btns.length) % btns.length;
+    btns[j].focus(); btns[j].click();
+  });
+}
+
+function scenario() { return S.scenarios.find(s => s.code === state.scenario); }
+
+function pickScenario(code) {
+  state.scenario = code;
+  state.shock = scenario().shock;
+  state.horizon = scenario().horizon;
+  state.coverage = 1;
+  syncControls();
+  render();
+}
+
+function syncControls() {
+  segButtons(document.getElementById('scn-buttons'),
+    S.scenarios.map(s => ({ value: s.code, label: s.name })), state.scenario, pickScenario);
+  segButtons(document.getElementById('view-buttons'),
+    [{ value: 'instant', label: 'Instant loss' }, { value: 'earnings', label: 'With earnings' }], state.view,
+    v => { state.view = v; syncControls(); render(); });
+  document.getElementById('sl-shock').value = (state.shock * 100).toFixed(1);
+  document.getElementById('sl-cov').value = Math.round(state.coverage * 100);
+  document.getElementById('sl-hor').value = state.horizon;
+}
+
+function isDefault() {
+  const s = scenario();
+  return Math.abs(state.shock - s.shock) < 1e-9 && state.coverage === 1 && state.horizon === s.horizon;
+}
+
+function render() {
+  if (!S) return;
+  const a = S.assumptions;
+  document.getElementById('out-shock').textContent = `+${(state.shock * 100).toFixed(1)} pp`;
+  document.getElementById('out-cov').textContent = state.coverage === 1 ? "bank's own" : `${Math.round(state.coverage * 100)}% of bank's own`;
+  document.getElementById('out-hor').textContent = `${state.horizon} year${state.horizon > 1 ? 's' : ''}`;
+  const hc = document.getElementById('ctl-horizon');
+  hc.classList.toggle('disabled', state.view !== 'earnings');
+  document.getElementById('sl-hor').disabled = state.view !== 'earnings';
+  document.getElementById('ctl-note').textContent = isDefault()
+    ? `Settings of the ${scenario().name} scenario. Figures equal the Excel model.`
+    : 'Custom settings: figures no longer correspond to a named scenario.';
+
+  const rows = S.banks.map(b => {
+    const bb = { ...b, npe_coverage: b.npe_coverage * state.coverage };
+    const r = stressBank(bb, state.shock, state.horizon, a);
+    const v = state.view === 'instant' ? r.instant : r.earnings;
+    return { b, r, after: v.headroom, ratio: v.ratio };
+  });
+  const core = rows.filter(x => x.b.role === 'Core');
+  const ref = rows.filter(x => x.b.role !== 'Core');
+  const below = core.filter(x => x.after < 0);
+
+  // tiles
+  const tiles = document.getElementById('st-tiles');
+  tiles.innerHTML = '';
+  const mk = (label, html, note, cls = '') => {
+    const d = document.createElement('div');
+    d.className = `tile ${cls}`;
+    d.innerHTML = `<div class="label"></div><div class="value">${html}</div><div class="note"></div>`;
+    d.querySelector('.label').textContent = label;
+    d.querySelector('.note').textContent = note;
+    tiles.appendChild(d);
+  };
+  mk('Core banks below requirement', `${below.length > 0 ? '▼ ' : ''}${below.length} <span class="from">of ${core.length}</span>`,
+    below.length ? below.map(x => SHORT[x.b.bank] || x.b.bank).join(', ') : 'none', below.length ? 'alert' : '');
+  mk('Median headroom', pp(median(core.map(x => x.after))),
+    `from ${pp(median(core.map(x => x.r.headroomToday)))} today, core banks`);
+  const prov = core.reduce((s, x) => s + x.r.provisions, 0);
+  mk('New provisions', `EUR ${(prov / 1000).toFixed(0)}bn`, `core banks, on EUR ${(core.reduce((s, x) => s + x.r.newNpe, 0) / 1000).toFixed(0)}bn of new NPE`);
+  const lowest = [...core].sort((p, q) => p.after - q.after)[0];
+  mk('Lowest headroom', pp(lowest.after), SHORT[lowest.b.bank] || lowest.b.bank, lowest.after < 0 ? 'alert' : '');
+
+  // legend + chart
+  document.getElementById('st-legend').innerHTML =
+    '<span><i class="sw-today"></i>June 2025</span>' +
+    '<span><i class="sw-after"></i>After shock</span>' +
+    '<span><i class="sw-below"></i>After shock, below requirement ▼</span>';
+  const toItem = x => ({ name: x.b.bank, short: SHORT[x.b.bank], before: x.r.headroomToday, after: x.after, x });
+  dumbbell(document.getElementById('ch-headroom'), [
+    { title: 'Core banks', items: core.map(toItem).sort((p, q) => p.after - q.after) },
+    { title: 'Reference case', items: ref.map(toItem) },
+  ], {
+    tipRows: d => [
+      ['CET1 ratio, June 2025', pct(d.x.r.cet1Today, 2)],
+      ['CET1 requirement', pct(d.x.b.cet1_requirement, 2)],
+      ['Headroom today', pp(d.before)],
+      ['Stressed CET1 ratio', pct(d.x.ratio, 2)],
+      ['Headroom after shock', pp(d.after)],
+    ],
+  });
+
+  // table
+  const fmtBn = v => (v / 1000).toLocaleString('en-GB', { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+  const head = ['Bank', 'Gross loans', 'NPE ratio', 'Coverage', 'New provisions', 'CET1 ratio', 'Requirement', 'Headroom today', 'Stressed CET1', 'Headroom after'];
+  const body = r => [
+    [r.b.bank, ''],
+    [fmtBn(r.b.gross_loans), 'num'],
+    [pct(r.b.npe_ratio, 2), 'num'],
+    [pct(r.b.npe_coverage * state.coverage, 1), 'num'],
+    [fmtBn(r.r.provisions), 'num'],
+    [pct(r.r.cet1Today, 2), 'num'],
+    [pct(r.b.cet1_requirement, 2), 'num'],
+    [pp(r.r.headroomToday), 'num'],
+    [pct(r.ratio, 2), 'num'],
+    [(r.after < 0 ? '▼ ' : '') + pp(r.after), r.after < 0 ? 'num neg' : 'num'],
+  ];
+  const t = document.createElement('table');
+  const thead = t.createTHead().insertRow();
+  head.forEach((h, i) => { const th = document.createElement('th'); th.textContent = h; if (i) th.className = 'num'; thead.appendChild(th); });
+  const tb = t.createTBody();
+  const group = label => { const tr = tb.insertRow(); tr.className = 'group'; const td = tr.insertCell(); td.colSpan = head.length; td.textContent = label; };
+  const add = r => { const tr = tb.insertRow(); for (const [v, c] of body(r)) { const td = tr.insertCell(); td.textContent = v; if (c) td.className = c; } };
+  group('Core banks');
+  [...core].sort((p, q) => p.after - q.after).forEach(add);
+  group('Reference case');
+  ref.forEach(add);
+  const wrap = document.getElementById('st-table');
+  wrap.innerHTML = '';
+  wrap.appendChild(t);
+}
+
+async function initStress() {
+  S = await getJSON('stress');
+  state.shock = scenario().shock;
+  state.horizon = scenario().horizon;
+  document.getElementById('sl-shock').addEventListener('input', e => { state.shock = +e.target.value / 100; render(); });
+  document.getElementById('sl-cov').addEventListener('input', e => { state.coverage = +e.target.value / 100; render(); });
+  document.getElementById('sl-hor').addEventListener('input', e => { state.horizon = +e.target.value; render(); });
+  syncControls();
+  render();
+}
+
+// ---- app ----
+// ---------- theme ----------
+const THEME_KEY = 'eba-theme';
+function applyTheme(t) {
+  if (t) document.documentElement.setAttribute('data-theme', t);
+  else document.documentElement.removeAttribute('data-theme');
+}
+try { applyTheme(localStorage.getItem(THEME_KEY)); } catch (e) { /* storage unavailable */ }
+document.querySelector('.theme-toggle').addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme')
+    || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  const next = current === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  try { localStorage.setItem(THEME_KEY, next); } catch (e) { /* storage unavailable */ }
+});
+
+// ---------- data ----------
+// All page data is in data/web_data.json (built by build_web_data.py): {overview, queries, stress}
+let webData = null;
+async function getJSON(key) {
+  if (!webData) {
+    webData = fetch('details/data/web_data.json').then(r => {
+      if (!r.ok) throw new Error(`details/data/web_data.json: HTTP ${r.status}`);
+      return r.json();
+    });
+  }
+  return (await webData)[key];
+}
+
+// ---------- overview ----------
+function tile(label, value, note, cls = '') {
+  const d = document.createElement('div');
+  d.className = `tile ${cls}`;
+  d.innerHTML = '<div class="label"></div><div class="value"></div><div class="note"></div>';
+  d.querySelector('.label').textContent = label;
+  d.querySelector('.value').textContent = value;
+  d.querySelector('.note').textContent = note || '';
+  return d;
+}
+
+let overviewData;
+function drawOverview() {
+  const d = overviewData;
+  barChart(document.getElementById('ch-country'), d.country_share.slice(0, 10), { labelWidth: 110 });
+  lineChart(document.getElementById('ch-trend'),
+    d.npe_trend.map(p => ({ label: { '202409': 'Sep 2024', '202412': 'Dec 2024', '202503': 'Mar 2025', '202506': 'Jun 2025' }[p.period] || p.period, value: p.npe_ratio })),
+    { yMin: 0.020, yMax: 0.023 });
+  const sectors = d.sectors.map(s => ({ ...s, name: s.name.replace(/^[A-Z] /, '') }));
+  pairedBars(document.getElementById('ch-sector'), sectors, [
+    { title: 'Share of exposure', value: s => s.share, format: pct, color: () => 'var(--series-1)' },
+    { title: 'Non-performing rate', value: s => s.npe_rate, format: pct, color: () => 'var(--series-2)' },
+  ]);
+}
+
+async function initOverview() {
+  overviewData = await getJSON('overview');
+  const d = overviewData;
+  const tiles = document.getElementById('ov-tiles');
+  tiles.append(
+    tile('Original exposure', `EUR ${d.total_exposure_eur_tn.toFixed(1)}tn`, `${d.banks} banks plus the EBA "all other banks" aggregate`),
+    tile('Top 20 banks', pct(d.top20_share), 'share of exposure, named banks'),
+    tile('Banks holding half', String(d.banks_for_half), 'largest banks needed to reach 50%'),
+    tile('NPE ratio', pct(d.npe_ratio_latest, 2), 'system, June 2025 (EBA definition)'),
+  );
+  drawOverview();
+
+  const s = await getJSON('stress');
+    const core = s.banks.filter(b => b.role === 'Core');
+  const sc = s.scenarios.find(x => x.code === 'S4');
+  const res = core.map(b => ({ b, r: stressBank(b, sc.shock, sc.horizon, s.assumptions) }));
+  const below = res.filter(x => x.r.instant.headroom < 0).sort((p, q) => p.r.instant.headroom - q.r.instant.headroom);
+  const box = document.getElementById('ov-stress');
+  box.innerHTML = '<h2></h2><p class="p1"></p><p class="p2"></p><a class="btn primary" href="#stress">Open the stress test</a>';
+  box.querySelector('h2').textContent = 'Could capital absorb the ECB adverse NPE shock?';
+  box.querySelector('.p1').textContent =
+    `Ten large banks start with a median of ${(median(res.map(x => x.r.headroomToday)) * 100).toFixed(1)} pp of CET1 above their own requirement. ` +
+    `The 3-year adverse shock (+${(sc.shock * 100).toFixed(1)} pp of gross loans turning non-performing), charged against today's capital, cuts the median to ${(median(res.map(x => x.r.instant.headroom)) * 100).toFixed(1)} pp, ` +
+    `and ${below.length} banks fall below their requirement: ${below.map(x => x.b.bank.replace(' Groep', '').replace(' Group', '')).join(', ')}.`;
+  box.querySelector('.p2').textContent =
+    'With run-rate earnings after tax and payout, none breaches, so resilience to a severe, prolonged shock depends on continued profitability.';
+}
+
+// ---------- router ----------
+const loaded = {};
+async function show(hash) {
+  let tab = hash.split('/')[0];
+  if (!['overview', 'ask', 'stress'].includes(tab)) tab = 'overview';
+  for (const p of document.querySelectorAll('.tab-panel')) p.hidden = p.id !== `tab-${tab}`;
+  for (const a of document.querySelectorAll('.tabs a')) {
+    if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  }
+  try {
+    if (!loaded[tab]) {
+      loaded[tab] = true;
+      if (tab === 'overview') await initOverview();
+      if (tab === 'ask') initAsk();
+      if (tab === 'stress') initStress();
+    } else {
+      redraw(tab);
+    }
+  } catch (err) {
+    console.error(err);
+    const panel = document.getElementById(`tab-${tab}`);
+    const msg = document.createElement('p');
+    msg.className = 'status error';
+    msg.textContent = `Could not load this section: ${err.message}`;
+    panel.querySelector('.wrap').prepend(msg);
+  }
+}
+
+async function redraw(tab) {
+  if (tab === 'ask') selectFromHash();
+  if (tab === 'overview' && overviewData) drawOverview();
+  if (tab === 'stress') render();
+}
+
+window.addEventListener('hashchange', () => {
+  const tab = location.hash.slice(1).split('/')[0];
+  const changedTab = !document.getElementById(`tab-${tab}`) || document.getElementById(`tab-${tab}`).hidden;
+  show(location.hash.slice(1));
+  if (changedTab) window.scrollTo(0, 0);
+});
+let resizeTimer;
+let lastWidth = window.innerWidth;
+window.addEventListener('resize', () => {
+  if (window.innerWidth === lastWidth) return;
+  lastWidth = window.innerWidth;
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => redraw((location.hash.slice(1) || 'overview').split('/')[0]), 150);
+});
+show(location.hash.slice(1) || 'overview');
+</script>
+</body>
+</html>

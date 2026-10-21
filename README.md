@@ -1,60 +1,35 @@
-# EBA Credit Risk Analytics
+# EU Bank Credit Risk: Could Banks Absorb the ECB's 2025 Stress?
 
-**Where does credit risk sit in the EU banking system, and could large EU banks absorb the NPE shock from the ECB's 2025 stress test with the capital they hold today?**
+**If a wave of bad loans like the ECB's 2025 stress test hit Europe, would the big banks still have enough capital?**
 
-An analysis of the EBA 2025 EU-wide Transparency Exercise (119 banks, 30 June 2025): 40 SQL queries on concentration, geography, sector and asset quality, and a stress model that measures each bank's distance to its own CET1 requirement under four ECB-based scenarios.
+For most of them, yes. Ten large banks start with a cushion of about 3.8 percentage points above the minimum capital they must hold. The ECB's three-year adverse scenario would shrink that cushion to about 0.5 points, and three banks (BAWAG, ING and BNP Paribas) would drop below their minimum. If the banks keep earning profits, none would.
 
-## Headline
+**[Open the website](https://agrawallachanchal.github.io/eba-credit-risk-analytics/)**: charts, the 40 questions asked of the data (run live in your browser), and a stress test you can adjust.
 
-- Ten core banks start with a median of **3.8 pp** of CET1 headroom above their requirement.
-- A **3-year adverse** NPE shock (+4.1 pp, ECB 2025) absorbed by existing capital alone cuts the median to **0.5 pp**. **BAWAG, ING and BNP Paribas** fall below their requirement.
-- With earnings at the June 2025 run rate, no bank breaches. Resilience to a severe, prolonged shock depends on continued profitability.
-- In the portfolio, **real estate** is the largest sector (25.5% of classified exposure). **Construction** is the weakest (NPE rate 6.4%, impairment ratio 4.1%). The system NPE ratio improved from 2.24% to 2.14% over the year.
+**[Read how the analysis works](https://agrawallachanchal.github.io/eba-credit-risk-analytics/blog/how-this-analysis-works.html)**: a method note covering the data, the model, the results and the limits.
 
-Full summary: [docs/00_executive_summary.md](docs/00_executive_summary.md)
+![Stress test: how much capital cushion each bank keeps](screenshots/03_stress.png)
 
-**Explore it:** [web page](https://agrawallachanchal.github.io/eba-credit-risk-analytics/), with the 40 queries runnable in the browser and an adjustable stress test.
+## What is in this repository
 
-![Stress test page of the Power BI dashboard](dashboard/screenshots/03_stress.png)
-
-## Repository
-
-| Path | Content |
+| Item | What it is |
 |---|---|
-| [`docs/`](docs/) | Executive summary, project defense, methodology, assumptions, limitations, validation log, SQL question log, data dictionary, references |
-| [`sql/`](sql/) | Schema, load scripts and 40 analytical queries, one file per question |
-| [`model/`](model/) | Stress-test workbook (live formulas), sourced CET1 requirements, model notes |
-| [`dashboard/`](dashboard/) | Power BI report (`.pbix` and text-based project), DAX measures, build script, screenshots |
-| [`web/`](web/) | Static web page: overview, the queries run live in the browser (DuckDB-WASM), interactive stress test |
-| [`data/`](data/) | Download instructions and metadata; raw files are not stored |
+| [`index.html`](index.html) | The website |
+| [`blog/`](blog/) | The method note |
+| [`EBA_stress_test_model.xlsx`](EBA_stress_test_model.xlsx) | The stress-test model in Excel. Change the yellow cells on the `Assumptions` sheet to try other scenarios. |
+| [`details/`](details/) | For analysts: the SQL, the full methodology, and the data |
 
-## Reproduce
+## A few terms
 
-1. Download `tr_cre.csv` and `tr_oth.csv` as described in [data/README.md](data/README.md) and place them in `data/raw/`.
-2. Build the database:
-   ```bash
-   createdb eba
-   psql -d eba -f sql/00_setup/01_create_tables.sql
-   psql -d eba -f sql/00_setup/02_load_data.sql
-   psql -d eba -f sql/00_setup/03_fix_known_issues.sql
-   ```
-3. Run any query in `sql/`. `sql/08_model_inputs/q33_stress_model_inputs.sql` produces the model's input sheet.
-4. Open `model/EBA_stress_test_model.xlsx`. Change the yellow cells on `Assumptions` to run alternative scenarios.
+- **Non-performing exposure (NPE):** a loan the borrower is unlikely to repay in full.
+- **CET1:** a bank's highest-quality capital, the first buffer against losses.
+- **Headroom:** how far a bank's CET1 is above the minimum its supervisor requires. Below the minimum, a bank is restricted from paying dividends and bonuses.
+- **Percentage point (pp):** a difference between two percentages. Going from 3.8% to 0.5% is a fall of 3.3 pp.
 
-## Method in brief
+## Source and limits
 
-Shock (ECB 2025 NPE path) × gross loans → new NPE × bank's own coverage → provisions → stressed CET1 ÷ constant RWA → headroom to the bank's published CET1 requirement. Limitations, with the direction of each bias, are in [docs/04_limitations_model_risk.md](docs/04_limitations_model_risk.md).
+Data: European Banking Authority, EU-wide Transparency Exercise 2025 (30 June 2025), reproduced with acknowledgement under the EBA [legal notice](https://eba.europa.eu/legal-notice). Scenario: ECB, *2025 stress test of euro area banks: final results*.
 
-## Source
+The model covers credit losses only and uses one shock for all banks, so it is a partial view, not a forecast. Educational analysis of public data. Not investment advice.
 
-Data: European Banking Authority, EU-wide Transparency Exercise 2025, reproduced with acknowledgement under the EBA legal notice. Scenario: ECB, *2025 stress test of euro area banks – Final results*. Full list in [docs/references.md](docs/references.md).
-
-Educational analysis of public data. Not investment advice.
-
-## Author
-
-Chanchal Agrawalla · [GitHub](https://github.com/agrawallachanchal)
-
-## Licence
-
-[MIT](LICENSE) for code and documentation. EBA data remain subject to the EBA's terms.
+Chanchal Agrawalla · [GitHub](https://github.com/agrawallachanchal) · [MIT licence](LICENSE) for code and documentation. EBA data remain subject to the EBA's terms.

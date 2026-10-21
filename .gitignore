@@ -1,5 +1,9 @@
-# Large raw EBA files: download them (see data/README.md), do not commit them
-data/raw/
+# Large raw EBA files: download them (see README.md), do not commit them
+details/data/tr_cre.csv
+details/data/tr_oth.csv
+details/data/tr_mrk.csv
+details/data/tr_sov.csv
+details/data/raw/
 
 # Office / OS / editor noise
 ~$*
@@ -19,8 +23,11 @@ __pycache__/
 *.dump
 .env
 
-# Power BI: local build copy and Desktop cache files
+# Power BI: local build copies and Desktop cache files
 dashboard/build/
+*.pbip
+*.SemanticModel/
+*.Report/
 **/.pbi/localSettings.json
 **/.pbi/cache.abf
 

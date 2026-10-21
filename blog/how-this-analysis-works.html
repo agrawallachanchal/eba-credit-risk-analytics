@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'sha256-WWCMtQUHyd+nmiYvKY+VomCTy+H2lY/5AD/NCItwfcI='; img-src data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>How this analysis works | EBA Credit Risk Analytics</title>
+<meta name="description" content="A bottom-up test of CET1 headroom for ten large euro-area banks under the ECB 2025 adverse NPE path: data, model, results, sensitivity and limitations.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='8' width='3' height='6' rx='1' fill='%232a78d6'/%3E%3Crect x='6.5' y='4' width='3' height='10' rx='1' fill='%232a78d6'/%3E%3Crect x='11' y='2' width='3' height='12' rx='1' fill='%232a78d6'/%3E%3C/svg%3E">
+<style>
+:root { color-scheme: light dark; --page:#f9f9f7; --surface:#fcfcfb; --surface-2:#f0efec; --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781; --grid:#e1e0d9; --border:rgba(11,11,11,.10); --accent:#2a78d6; --critical-ink:#b42318; --font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root { --page:#0d0d0d; --surface:#1a1a19; --surface-2:#262624; --ink:#f0efec; --ink-2:#c3c2b7; --muted:#898781; --grid:#2c2c2a; --border:rgba(255,255,255,.10); --accent:#5598e7; --critical-ink:#e66767; } }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font:17px/1.65 var(--font); -webkit-text-size-adjust:100%; }
+a { color:var(--accent); }
+.site-header { background:var(--surface); border-bottom:1px solid var(--border); }
+.header-row { max-width:1160px; margin:0 auto; padding:0 16px; display:flex; align-items:center; gap:16px; min-height:56px; flex-wrap:wrap; font-size:15px; }
+.brand { font-weight:650; color:var(--ink); text-decoration:none; white-space:nowrap; }
+.header-row nav { display:flex; gap:4px; flex:1; flex-wrap:wrap; }
+.header-row nav a { padding:8px 12px; border-radius:8px; color:var(--ink-2); text-decoration:none; font-weight:500; }
+.header-row nav a:hover { background:var(--surface-2); color:var(--ink); }
+.header-row nav a[aria-current="page"] { background:var(--surface-2); color:var(--ink); box-shadow:inset 0 -2px 0 var(--accent); }
+article { max-width:720px; margin:0 auto; padding:40px 16px 72px; }
+.eyebrow { color:var(--muted); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; font-weight:600; margin:0; }
+h1 { font-size:clamp(1.7rem,4vw,2.3rem); line-height:1.2; letter-spacing:-.015em; margin:.4rem 0 .8rem; font-weight:700; }
+.dek { color:var(--ink-2); font-size:1.12rem; margin:0 0 1.2rem; }
+.byline { color:var(--muted); font-size:.88rem; margin:0 0 2rem; }
+h2 { font-size:1.35rem; line-height:1.3; margin:2.4rem 0 .6rem; letter-spacing:-.01em; }
+h3 { font-size:1.05rem; margin:1.6rem 0 .3rem; }
+p { margin:.8rem 0; }
+.summary { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:10px; padding:16px 20px; margin:0 0 2rem; }
+.summary p { margin:.4rem 0; }
+.summary ul { margin:.4rem 0; padding-left:1.2rem; }
+code { font-family:ui-monospace,Consolas,monospace; font-size:.88em; background:var(--surface-2); padding:1px 5px; border-radius:4px; }
+.formula { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 18px; margin:1rem 0; font-family:ui-monospace,Consolas,monospace; font-size:.88rem; line-height:1.8; overflow-x:auto; }
+.table-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:10px; margin:1rem 0; background:var(--surface); }
+table { border-collapse:collapse; width:100%; font-size:.86rem; }
+th,td { padding:8px 12px; border-bottom:1px solid var(--grid); text-align:left; vertical-align:top; }
+th { background:var(--surface-2); font-weight:600; }
+td.num,th.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+td.neg { color:var(--critical-ink); font-weight:650; }
+tr:last-child td { border-bottom:0; }
+caption { caption-side:bottom; text-align:left; color:var(--muted); font-size:.8rem; padding:8px 12px; }
+.note { color:var(--muted); font-size:.88rem; }
+ol.refs { font-size:.9rem; color:var(--ink-2); padding-left:1.2rem; }
+ol.refs li { margin:.35rem 0; }
+footer { max-width:720px; margin:0 auto; padding:0 16px 48px; color:var(--muted); font-size:.82rem; }
+@media (max-width:640px) { body { font-size:16px; } article { padding-top:28px; } }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="header-row">
+    <a class="brand" href="../index.html">EBA Credit Risk Analytics</a>
+    <nav aria-label="Sections">
+      <a href="../index.html#overview">Overview</a>
+      <a href="../index.html#ask">Ask the data</a>
+      <a href="../index.html#stress">Stress test</a>
+      <a href="how-this-analysis-works.html" aria-current="page">How it works</a>
+    </nav>
+    <a href="https://github.com/agrawallachanchal/eba-credit-risk-analytics" style="color:var(--ink-2);text-decoration:none">Repository</a>
+  </div>
+</header>
+<main>
+<article>
+<p class="eyebrow">Method note · bank capital · October 2026</p>
+<h1>Could EU banks absorb the ECB's 2025 NPE shock from the capital they hold today?</h1>
+<p class="dek">A bottom-up test of CET1 headroom for ten large euro-area banks, built on the EBA's 2025 Transparency Exercise and the ECB's adverse non-performing-exposure path.</p>
+<p class="byline">Chanchal Agrawalla · Data as of 30 June 2025 · Educational analysis of public data, not investment advice</p>
+
+<div class="summary">
+<p><strong>Summary</strong></p>
+<ul>
+<li>The ten core banks start with a median of <strong>3.8 pp</strong> of CET1 above their own requirement (the level that triggers restrictions on distributions).</li>
+<li>Charging the ECB's 3-year adverse NPE shock (+4.1 pp of gross loans) against today's capital cuts the median to <strong>0.5 pp</strong>. <strong>BAWAG, ING and BNP Paribas</strong> fall below their requirement, by 1.4, 1.0 and 0.3 pp.</li>
+<li>If banks keep earning at the June 2025 run rate, none breaches. The result therefore depends on profitability surviving the downturn, which is exactly what the ECB adverse scenario puts under pressure.</li>
+<li>Confidence is <strong>medium</strong>. The model stresses credit losses only, applies one system-wide shock, and holds revenues and risk-weighted assets constant. Each limitation and the direction of its bias is listed below.</li>
+</ul>
+</div>
+
+<h2>1. The question, and why headroom is the right output</h2>
+<p>Rising non-performing exposures are the main route by which a downturn reaches bank capital. In the ECB's 2025 adverse scenario, loan losses removed 5.0 pp of CET1, the largest single driver of a 4.0 pp net depletion. When a bank's CET1 ratio falls below its requirement, it faces automatic restrictions on dividends, AT1 coupons and variable pay (CRD Article 141, the maximum distributable amount or MDA mechanism).</p>
+<p>The distance to that trigger is what matters to shareholders, AT1 holders and supervisors. The model's output is therefore <em>headroom</em>, the stressed CET1 ratio minus the bank's own requirement, not the stressed ratio itself. The two can rank banks differently: requirements in the sample range from 9.6% to 12.2%.</p>
+
+<h2>2. Data</h2>
+<p>The source is the EBA EU-wide Transparency Exercise 2025: 119 banks from 25 home countries, plus an EBA "All other banks" aggregate, reported at four quarter-ends. The analysis uses 30 June 2025. The data are bank-level and item-level with common supervisory definitions, which makes them reproducible and comparable across banks. Annual reports would not be.</p>
+<p>The NPE ratio is the EBA's supervisory measure, which includes exposures "unlikely to pay" regardless of days past due. It therefore runs higher than banks' own NPL ratios (Santander 3.35% on this basis against 2.92% reported; BNP Paribas 2.79% against 1.6%). Because the ECB's NPE path uses the same definition, shock and base are like for like.</p>
+
+<h2>3. Four data traps that change the answer</h2>
+<p>The Transparency Exercise is stored as one long table, and several of its conventions silently inflate results. Each was found, documented and corrected in every affected query.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Trap</th><th>Effect if ignored</th></tr></thead>
+<tbody>
+<tr><td>Exposure items 2520502, 2520522 and 2520532 hold a country-total row (<code>country = 0</code>) <em>and</em> a breakdown of the same exposure by top counterparty countries.</td><td>Summing every row roughly doubles exposure: EUR 58tn instead of EUR 31.3tn. It also produced a false explanation of a gap between the data and Crédit Agricole's disclosed exposure.</td></tr>
+<tr><td>Sector item 2521301 repeats every bank-sector pair under performing-status codes 0, 2, 4 and 5.</td><td>Sector exposure is counted several times. After filtering to code 0, real estate is 25.5% of classified exposure.</td></tr>
+<tr><td>NACE code 0 is a total, not "unclassified" exposure.</td><td>Sector shares are distorted by a duplicate total.</td></tr>
+<tr><td>LEI <code>XXXXXXXXXXXXXXXXXXXX</code> is the EBA's "All other banks" aggregate (EUR 527bn), not a bank.</td><td>It ranked 17th in the top-20 when treated as a bank. The true bank sample is 119, not 120.</td></tr>
+</tbody></table></div>
+<p>Shares moved little after the corrections (top-20 share 66.0% to 66.4%; country HHI 1,510 to 1,501) because the duplication was broadly proportional. Levels, rankings and explanations did change.</p>
+
+<h2>4. The model</h2>
+<h3>Chain of calculation</h3>
+<p>For each bank, the NPE shock is applied to total gross loans (performing plus non-performing), because the shock moves the NPE ratio of the whole book. The new NPE are provisioned at the bank's own current coverage ratio.</p>
+<div class="formula">ΔNPE = shock × gross loans<br>
+Provisions = ΔNPE × current NPE coverage<br>
+Stressed CET1 = CET1 − provisions<br>
+Headroom = stressed CET1 ÷ RWA − CET1 requirement</div>
+<p>RWA is held constant and the balance sheet is static, as in the EBA and ECB methodology. This isolates the credit-loss channel.</p>
+
+<h3>Scenarios</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Scenario</th><th class="num">NPE shock</th><th>Source</th></tr></thead>
+<tbody>
+<tr><td>1-year baseline</td><td class="num">+0.8 pp</td><td>ECB Chart 3.7 (read from chart)</td></tr>
+<tr><td>1-year adverse</td><td class="num">+1.2 pp</td><td>ECB Chart 3.7 (read from chart)</td></tr>
+<tr><td>3-year baseline</td><td class="num">+2.4 pp</td><td>ECB Chart 3.7 (read from chart)</td></tr>
+<tr><td>3-year adverse</td><td class="num">+4.1 pp</td><td>ECB text: NPE ratio from 1.7% to 5.8% by end-2027</td></tr>
+</tbody></table></div>
+<p>Only the adverse end point is stated in the ECB text. The other paths were read by measuring the plotted lines against the chart axis, calibrated to the two published values. Reading the adverse line at end-2027 gives 5.74% against the published 5.8%, a calibration error of about 0.06 pp.</p>
+
+<h3>The requirement</h3>
+<p>Each bank's own published CET1 requirement is used: 4.5% Pillar 1, plus the CET1 part of the Pillar 2 requirement (at least 56.25% of it), plus the combined buffer requirement. Pillar 2 Guidance is excluded because breaching it does not trigger the MDA. Figures come from SREP announcements or Pillar 3 template EU KM1.</p>
+
+<h3>Sample</h3>
+<p>Ten core banks span a wide range of size, NPE ratio and starting CET1 ratio. Two deliberate contrast cases sit alongside. <strong>Kommuninvest</strong> lends only to Swedish municipalities and has no NPE; a commercial-loan shock applied to it would erase about 80% of its CET1, an artefact, so it is excluded from the stress run. <strong>Revolut</strong> is stressed but reported separately and kept out of medians. Morgan Stanley Europe stays in despite a 0.02% NPE ratio: the exclusion of Kommuninvest rests on what the bank is, not on its current numbers, and dropping healthy banks would bias the sample toward weaker ones.</p>
+
+<h2>5. Results</h2>
+<div class="table-wrap"><table>
+<caption>3-year adverse scenario (+4.1 pp), 30 June 2025 data. Headroom in percentage points of RWA. "Instant loss" charges the provisions against today's capital. "With earnings" adds three years of run-rate profit after 30% tax and a 30% payout. Revolut (reference case) is omitted; it stays well above its requirement in both views.</caption>
+<thead><tr><th>Bank</th><th class="num">CET1 today</th><th class="num">Requirement</th><th class="num">Headroom today</th><th class="num">Headroom, instant loss</th><th class="num">Headroom, with earnings</th></tr></thead>
+<tbody>
+<tr><td>BAWAG Group</td><td class="num">12.5%</td><td class="num">10.3%</td><td class="num">2.2</td><td class="num neg">-1.4</td><td class="num">+7.3</td></tr>
+<tr><td>ING Groep</td><td class="num">13.3%</td><td class="num">10.9%</td><td class="num">2.4</td><td class="num neg">-1.0</td><td class="num">+4.6</td></tr>
+<tr><td>BNP Paribas</td><td class="num">12.5%</td><td class="num">10.3%</td><td class="num">2.2</td><td class="num neg">-0.3</td><td class="num">+4.2</td></tr>
+<tr><td>Deutsche Bank</td><td class="num">14.2%</td><td class="num">11.2%</td><td class="num">3.0</td><td class="num">+0.3</td><td class="num">+6.2</td></tr>
+<tr><td>Banco Santander</td><td class="num">13.0%</td><td class="num">9.7%</td><td class="num">3.3</td><td class="num">+0.5</td><td class="num">+6.2</td></tr>
+<tr><td>Commerzbank</td><td class="num">14.6%</td><td class="num">10.3%</td><td class="num">4.2</td><td class="num">+0.6</td><td class="num">+5.5</td></tr>
+<tr><td>Groupe Crédit Agricole</td><td class="num">17.6%</td><td class="num">9.8%</td><td class="num">7.8</td><td class="num">+3.6</td><td class="num">+8.8</td></tr>
+<tr><td>HSBC Continental Europe</td><td class="num">15.5%</td><td class="num">9.7%</td><td class="num">5.8</td><td class="num">+4.3</td><td class="num">+7.2</td></tr>
+<tr><td>Morgan Stanley Europe</td><td class="num">18.0%</td><td class="num">9.6%</td><td class="num">8.4</td><td class="num">+6.8</td><td class="num">+9.9</td></tr>
+<tr><td>CEC Bank</td><td class="num">24.0%</td><td class="num">12.2%</td><td class="num">11.8</td><td class="num">+8.4</td><td class="num">+14.2</td></tr>
+</tbody></table></div>
+<p>Three observations. First, the three banks that breach are the three with the lowest starting headroom (2.2 to 2.4 pp). Second, the provisions cost the core banks between 1.5 and 4.2 pp of RWA, so starting headroom, not the size of the loss alone, decides the outcome. Third, a one-year adverse shock (+1.2 pp) is absorbed by all ten banks from existing capital.</p>
+
+<h2>6. Why the headline ignores earnings</h2>
+<p>The model stresses credit losses but not revenue. Crediting three years of profit at the June 2025 run rate would add 4 to 14 pp of CET1 per bank, more than the 1.5 to 4.2 pp the shock removes. That would show capital <em>rising</em> under stress, contradicting the ECB's 4.0 pp net fall, in which the adverse scenario cuts net interest income capacity by 2.6 pp and fee and dividend income by 1.0 pp against baseline.</p>
+<p>The headline therefore asks a narrower and more robust question: can today's capital absorb the shock? The earnings view, using the EBA's own 30% tax rate and 30% payout floor (zero in loss years), is shown beside it and labelled optimistic. That no bank breaches there says the result depends on continued profitability, not that the risk is absent.</p>
+
+<h2>7. Sensitivity and benchmark</h2>
+<ul>
+<li><strong>Shock ±0.3 pp:</strong> the same three banks breach.</li>
+<li><strong>Coverage on new NPE +10 pp:</strong> breaches rise from three to six of the ten core banks. This is the most important sensitivity: in a downturn, collateral values fall and coverage on new defaults is typically higher than on the stock.</li>
+<li><strong>Payout 0% and 50%</strong> (earnings view): tested in the model workbook.</li>
+<li><strong>Against the ECB:</strong> the model's 1.5 to 4.2 pp credit cost sits below the ECB's 5.0 pp loan-loss contribution. That is expected. The model provisions new defaults at current coverage, while the ECB's perimeter also covers impairments on performing loans.</li>
+</ul>
+
+<h2>8. Limitations and the direction of their bias</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Limitation</th><th>Bias</th></tr></thead>
+<tbody>
+<tr><td>Credit losses only. In the ECB result, market risk took 1.3 pp and operational risk about 0.6 to 0.7 pp.</td><td>Understates depletion</td></tr>
+<tr><td>No revenue stress; RWA constant. The ECB result shows 1.1 pp from RWA growth.</td><td>Overstates headroom, especially in the earnings view</td></tr>
+<tr><td>One system-wide shock for all banks, with the bank's own coverage and loan book driving the loss size.</td><td>Either way: understates for riskier books, overstates for safer ones</td></tr>
+<tr><td>New NPE provisioned at current coverage.</td><td>Understates losses (see the +10 pp case)</td></tr>
+<tr><td>Baseline and 1-year shocks read from a chart, accurate to about ±0.1 pp.</td><td>Small; ±0.3 pp leaves the breach count unchanged</td></tr>
+<tr><td>Payout: the EBA rule prefers each bank's declared policy or 2020 to 2024 median, which is not in the dataset, so the 30% floor is applied to all.</td><td>Overstates retained earnings for high-payout banks</td></tr>
+<tr><td>CET1 requirements: five are as at 1 January 2025 and five at 30 June 2025; CEC Bank uses a labelled fallback including a 2% systemic risk buffer last confirmed for 2022 (10.2% without it).</td><td>Small, either way; CEC is far from the threshold under both</td></tr>
+<tr><td>Single-period end state: no yearly path, management actions or balance-sheet change.</td><td>Either way</td></tr>
+</tbody></table></div>
+<p>This is not a forecast and not a replication of the supervisory stress test. It does not cover market, operational or funding risk.</p>
+
+<h2>9. Checks, and how to reproduce it</h2>
+<p>Every model input reconciles to the source: CET1 divided by RWA reproduces the reported ratio for each bank, and four banks' ratios match their Pillar 3 reports at 30 June 2025. The workbook (1,390 formulas, no errors) was recomputed independently outside Excel and agrees to within 10<sup>−15</sup>. All 40 analytical queries run unchanged on PostgreSQL 16 and in the browser on DuckDB-WASM.</p>
+<ul>
+<li><a href="../index.html#ask">Run the 40 queries in your browser</a></li>
+<li><a href="../index.html#stress">Change the shock, coverage and payout in the stress test</a></li>
+<li><a href="https://github.com/agrawallachanchal/eba-credit-risk-analytics/raw/main/EBA_stress_test_model.xlsx">Download the stress-test workbook (Excel, live formulas)</a></li>
+<li><a href="https://github.com/agrawallachanchal/eba-credit-risk-analytics/blob/main/details/METHODOLOGY.md">Full methodology, assumptions register and validation log</a></li>
+</ul>
+
+<h2>Sources</h2>
+<ol class="refs">
+<li>European Banking Authority, EU-wide Transparency Exercise 2025 (data as of 30 June 2025), reproduced with acknowledgement under the EBA legal notice.</li>
+<li>ECB (2025), <em>2025 stress test of euro area banks: final results</em>, credit risk section and Chart 3.7.</li>
+<li>EBA (2024), <em>2025 EU-wide stress test: methodological note</em> (tax rate, para. 32; dividend payout, Table 1).</li>
+<li>Directive 2013/36/EU (CRD), Article 141; Regulation (EU) No 575/2013 (CRR), Article 36(1)(c).</li>
+<li>Bank Pillar 3 disclosures (template EU KM1) and SREP announcements for the CET1 requirements.</li>
+</ol>
+</article>
+</main>
+<footer>Educational analysis of public data. Not investment advice. Code and documentation are MIT licensed; EBA data remain subject to the EBA's terms.</footer>
+</body>
+</html>

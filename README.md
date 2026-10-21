@@ -8,16 +8,16 @@ For most of them, yes. Ten large banks start with a cushion of about 3.8 percent
 
 **[Read how the analysis works](https://agrawallachanchal.github.io/eba-credit-risk-analytics/blog/how-this-analysis-works.html)**: a method note covering the data, the model, the results and the limits.
 
-![Stress test: how much capital cushion each bank keeps](screenshots/03_stress.png)
+![Stress test: how much capital cushion each bank keeps](docs/screenshots/03_stress.png)
 
 ## What is in this repository
 
 | Item | What it is |
 |---|---|
-| [`index.html`](index.html) | The website |
-| [`blog/`](blog/) | The method note |
 | [`EBA_stress_test_model.xlsx`](EBA_stress_test_model.xlsx) | The stress-test model in Excel. Change the yellow cells on the `Assumptions` sheet to try other scenarios. |
-| [`details/`](details/) | For analysts: the SQL, the full methodology, and the data |
+| [`eba_analysis.sql`](eba_analysis.sql) | All the SQL in one file: builds the database, runs the 40 queries, exports the web data |
+| [`build_web_data.py`](build_web_data.py) | Rebuilds the website's data (download steps are at the top of the file) |
+| [`docs/`](docs/) | The published website: home page, article, data |
 
 ## A few terms
 

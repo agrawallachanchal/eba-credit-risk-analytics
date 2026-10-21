@@ -1,12 +1,21 @@
-"""Builds the data files behind the project web page (index.html).
+"""Builds the data files behind the project web page (docs/index.html).
 
-Run from the details/ folder after placing the raw EBA files tr_cre.csv and tr_oth.csv in details/data/ (see details/README.md):
+Run from the repository root.
+
+1. Download tr_cre.csv (~123 MB) and tr_oth.csv (~15 MB) from the EBA transparency exercise page,
+   https://www.eba.europa.eu/risk-and-data-analysis/risk-analysis/eu-wide-transparency-exercise
+   (Database > Full database), and place them in raw/ (git-ignored). The EBA indicates the exercise is being
+   succeeded by its Pillar 3 Data Hub, so check the page for current availability.
+2. Optional, to rebuild the SQL results: createdb eba && psql -d eba -f eba_analysis.sql (PostgreSQL 14 or later).
+3. Rebuild the web page data:
 
     pip install "duckdb>=1.4,<2"
-    python build_web_data.py          # rebuild data/eba.duckdb and data/web_data.json, then stamp ../index.html
-    python build_web_data.py --csp    # only update the Content-Security-Policy hashes in ../index.html
+    python build_web_data.py          # rebuild docs/data/eba.duckdb and docs/data/web_data.json, then stamp docs/index.html
+    python build_web_data.py --csp    # only update the Content-Security-Policy hashes in docs/index.html
 
-Outputs (in data/):
+To view the site locally, run  python -m http.server 8000 --directory docs  and open http://localhost:8000.
+
+Outputs (in docs/data/):
     eba.duckdb                         DuckDB database with the tables credit and oth (the rows of tr_cre.csv and
                                        tr_oth.csv for the items the 40 queries use), bank_metadata, nace_metadata
                                        and prefstatus_metadata
@@ -30,7 +39,8 @@ from pathlib import Path
 import duckdb
 
 ROOT = Path(__file__).resolve().parent
-RAW = META = PROCESSED = OUT = ROOT / "data"
+RAW = ROOT / "raw"
+META = PROCESSED = OUT = ROOT / "docs" / "data"
 
 # Items used by the 40 queries (credit = tr_cre.csv, oth = tr_oth.csv)
 CREDIT_ITEMS = [2520502, 2520522, 2520532, 2521301, 2521302, 2521303, 2520603, 2520613]
@@ -54,7 +64,7 @@ DB_FILE = OUT / "eba.duckdb"
 def build_database(con):
     for f in ["tr_cre.csv", "tr_oth.csv"]:
         if not (RAW / f).exists():
-            raise SystemExit(f"Missing {RAW / f}. Download it as described in README.md.")
+            raise SystemExit(f"Missing {RAW / f}. Download it as described at the top of this file.")
     if DB_FILE.exists():
         DB_FILE.unlink()
     con.execute(f"ATTACH '{DB_FILE.as_posix()}' AS eba (STORAGE_VERSION 'v1.4.0')")
@@ -168,7 +178,7 @@ def build_stress_inputs(con, queries):
     q33 = next(q for s in queries for q in s["queries"] if q["id"] == "Q33")
     rows = con.execute(q33["sql"].rstrip(";")).fetchall()
     cols = [d[0] for d in con.description]
-    with open(ROOT / "data" / "cet1_requirements.csv", encoding="utf-8") as f:
+    with open(ROOT / "docs" / "data" / "cet1_requirements.csv", encoding="utf-8") as f:
         req = {r["lei_code"]: r for r in csv.DictReader(f)}
     banks = []
     for r in rows:
@@ -239,7 +249,7 @@ def build_overview():
 
 def stamp_csp():
     """Puts the SHA-256 hashes of the inline <style> and <script> of index.html into its Content-Security-Policy."""
-    page = ROOT.parent / "index.html"
+    page = ROOT / "docs" / "index.html"
     html = page.read_text(encoding="utf-8")
     def digest(text):
         return "'sha256-" + base64.b64encode(hashlib.sha256(text.encode("utf-8")).digest()).decode() + "'"

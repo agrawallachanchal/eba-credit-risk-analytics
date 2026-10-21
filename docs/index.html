@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en">
-<!-- EBA Credit Risk Analytics web page: one self-contained file (styles and script inline). Data: details/data/web_data.json and details/data/eba.duckdb, built by details/build_web_data.py. After editing the inline style or script, run  python details/build_web_data.py --csp  to update the Content-Security-Policy hashes. -->
+<!-- EBA Credit Risk Analytics web page: one self-contained file (styles and script inline). Data: data/web_data.json and data/eba.duckdb, built by build_web_data.py in the repository root. After editing the inline style or script, run  python build_web_data.py --csp  to update the Content-Security-Policy hashes. -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-uHL4F7UxNgyVpmrUiupSiTJ8TW/XWNPRtjbVlpLTEsM=' https://cdn.jsdelivr.net 'wasm-unsafe-eval' blob:; worker-src 'self' blob:; connect-src 'self' https://cdn.jsdelivr.net; style-src 'sha256-ygNCuzqWseuMpIPXaokgHUjo4F4RdrYBd6rnKIYBCgk='; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-ZbocxxzEgtM5U4I8On4aBGSrDWs0BgfPvFABcEKcO+4=' https://cdn.jsdelivr.net 'wasm-unsafe-eval' blob:; worker-src 'self' blob:; connect-src 'self' https://cdn.jsdelivr.net; style-src 'sha256-ygNCuzqWseuMpIPXaokgHUjo4F4RdrYBd6rnKIYBCgk='; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <title>EBA Credit Risk Analytics</title>
 <meta name="description" content="Credit risk in the EU banking system from the EBA 2025 Transparency Exercise: exposure, asset quality, the 40 SQL queries run live in the browser, and an NPE stress test against each bank's CET1 requirement.">
@@ -269,7 +269,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 
     <div class="card callout" id="ov-stress"></div>
 
-    <p class="footnote">Source: European Banking Authority, EU-wide Transparency Exercise 2025, reproduced with acknowledgement. Scenario: ECB, 2025 stress test of euro area banks, final results. Educational analysis of public data, not investment advice. Method, assumptions and limitations are documented in the <a href="https://github.com/agrawallachanchal/eba-credit-risk-analytics/blob/main/details/METHODOLOGY.md">repository</a>.</p>
+    <p class="footnote">Source: European Banking Authority, EU-wide Transparency Exercise 2025, reproduced with acknowledgement. Scenario: ECB, 2025 stress test of euro area banks, final results. Educational analysis of public data, not investment advice. Method, assumptions and limitations are in the <a href="blog/how-this-analysis-works.html">method note</a>.</p>
   </div>
 </section>
 
@@ -662,8 +662,8 @@ async function startEngine() {
   URL.revokeObjectURL(workerUrl);
   await db.open({ query: { castBigIntToDouble: true, castDecimalToDouble: true } });
   // The extract is a DuckDB database file (built by build_web_data.py); it needs no extensions
-  const r = await fetch('details/data/eba.duckdb');
-  if (!r.ok) throw new Error(`details/data/eba.duckdb: HTTP ${r.status}`);
+  const r = await fetch('data/eba.duckdb');
+  if (!r.ok) throw new Error(`data/eba.duckdb: HTTP ${r.status}`);
   await db.registerFileBuffer('eba.duckdb', new Uint8Array(await r.arrayBuffer()));
   const c = await db.connect();
   await c.query("ATTACH 'eba.duckdb' AS eba (READ_ONLY)");
@@ -796,8 +796,8 @@ function select(q, { runIt = true, updateHash = true } = {}) {
   }
   const src = document.createElement('p');
   const a = document.createElement('a');
-  a.href = `https://github.com/agrawallachanchal/eba-credit-risk-analytics/blob/main/details/eba_analysis.sql#L${q.line}`;
-  a.textContent = `details/eba_analysis.sql, line ${q.line}`;
+  a.href = `https://github.com/agrawallachanchal/eba-credit-risk-analytics/blob/main/eba_analysis.sql#L${q.line}`;
+  a.textContent = `eba_analysis.sql, line ${q.line}`;
   src.append('Source: ', a);
   notes.appendChild(src);
   $('q-sql').value = q.sql;
@@ -1052,8 +1052,8 @@ document.querySelector('.theme-toggle').addEventListener('click', () => {
 let webData = null;
 async function getJSON(key) {
   if (!webData) {
-    webData = fetch('details/data/web_data.json').then(r => {
-      if (!r.ok) throw new Error(`details/data/web_data.json: HTTP ${r.status}`);
+    webData = fetch('data/web_data.json').then(r => {
+      if (!r.ok) throw new Error(`data/web_data.json: HTTP ${r.status}`);
       return r.json();
     });
   }

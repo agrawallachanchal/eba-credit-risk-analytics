@@ -1,9 +1,5 @@
-# Large raw EBA files: download them (see README.md), do not commit them
-details/data/tr_cre.csv
-details/data/tr_oth.csv
-details/data/tr_mrk.csv
-details/data/tr_sov.csv
-details/data/raw/
+# Large raw EBA files: download them (see build_web_data.py), do not commit them
+raw/
 
 # Office / OS / editor noise
 ~$*
